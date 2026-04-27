@@ -53,11 +53,10 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-between bg-gradient-to-br from-green-50 to-white p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-50 to-white p-4">
       
-      {/* Centered Content Wrapper */}
-      <div className="flex-1 flex items-center justify-center w-full mt-8 mb-4">
-        <Card className="w-full max-w-md border-green-200 shadow-lg">
+      <div className="w-full max-w-md">
+        <Card className="border-green-200 shadow-lg">
           <CardHeader className="text-center space-y-4">
             
             <div className="mx-auto w-32 h-32 bg-green-50 rounded-full flex items-center justify-center p-3 overflow-hidden border border-green-100 shadow-sm">
@@ -78,7 +77,7 @@ export function LoginPage() {
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-6">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2 text-left">
                 <Label htmlFor="email" className="font-bold text-gray-700">Email</Label>
@@ -112,23 +111,23 @@ export function LoginPage() {
                 {isLoading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
+
+            {/* Agency Branding Footer - Now inside the box */}
+            <div className="mt-8 pt-5 border-t border-gray-100 text-center">
+              <p className="text-xs sm:text-sm text-gray-400 font-medium">
+                Powered by{" "}
+                <a 
+                  href="https://www.novacreativesolutions.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-green-600 hover:text-green-700 font-bold hover:underline transition-colors"
+                >
+                  Nova Creatives
+                </a>
+              </p>
+            </div>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Agency Branding Footer */}
-      <div className="w-full text-center py-4 mt-auto">
-        <p className="text-sm text-gray-400 font-medium">
-          Powered by{" "}
-          <a 
-            href="https://www.novacreativesolution.com" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="text-green-600 hover:text-green-700 font-bold hover:underline transition-colors"
-          >
-            Nova Creatives
-          </a>
-        </p>
       </div>
 
     </div>
