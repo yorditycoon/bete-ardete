@@ -135,59 +135,59 @@ export function AttendancePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 animate-in fade-in duration-500">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12 animate-in fade-in duration-500 px-4 sm:px-6">
       
       {/* HEADER */}
       <div className="bg-white rounded-xl p-6 sm:p-8 border border-green-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-black flex items-center gap-2">
-            <UserCheck className="w-8 h-8 text-green-600" /> Saturday Service Attendance
+            <UserCheck className="w-8 h-8 text-green-600 shrink-0" /> Saturday Service Attendance
           </h2>
           <p className="text-gray-600 font-medium mt-1">Tracking faithful attendance for the whole congregation.</p>
         </div>
       </div>
 
       {/* STATS ROW */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="border-green-200 shadow-sm bg-white hover:border-green-400 transition-colors">
           <CardContent className="pt-6 flex items-center justify-between">
             <div>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Members Registered</p>
-              <p className="text-4xl font-black text-black mt-1">{members.length}</p>
+              <p className="text-3xl sm:text-4xl font-black text-black mt-1">{members.length}</p>
             </div>
-            <Users className="w-12 h-12 text-green-100" />
+            <Users className="w-10 h-10 sm:w-12 sm:h-12 text-green-100" />
           </CardContent>
         </Card>
         <Card className="border-green-200 shadow-sm bg-white hover:border-green-400 transition-colors">
           <CardContent className="pt-6 flex items-center justify-between">
             <div>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Attendance Rate</p>
-              <p className="text-4xl font-black text-green-600 mt-1">{attendanceRate}%</p>
+              <p className="text-3xl sm:text-4xl font-black text-green-600 mt-1">{attendanceRate}%</p>
             </div>
-            <TrendingUp className="w-12 h-12 text-green-100" />
+            <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-green-100" />
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* LEFT SIDE: CALENDAR */}
-        <Card className="lg:col-span-1 border-green-200 shadow-sm h-fit sticky top-24 bg-white">
+        <Card className="lg:col-span-1 border-green-200 shadow-sm bg-white w-full">
           <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
             <CardTitle className="text-lg text-black">Gathering Date</CardTitle>
           </CardHeader>
-          <CardContent className="flex justify-center p-4">
+          <CardContent className="flex justify-center p-4 overflow-x-auto">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={(date) => date && setSelectedDate(date)}
-              className="rounded-md border border-green-200"
+              className="rounded-md border border-green-200 max-w-full"
             />
           </CardContent>
         </Card>
 
         {/* RIGHT SIDE: MEMBER LIST */}
-        <Card className="lg:col-span-2 border-green-200 shadow-sm bg-white flex flex-col h-[600px]">
+        <Card className="lg:col-span-2 border-green-200 shadow-sm bg-white flex flex-col h-[550px] sm:h-[600px] w-full">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-4 flex-none">
             <div>
               <CardTitle className="text-xl text-black">Mark Attendance</CardTitle>
@@ -206,25 +206,25 @@ export function AttendancePage() {
           </CardHeader>
           
           <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1 sm:pr-2">
               {members.length === 0 ? (
                 <p className="text-center text-gray-500 py-12 italic">No members found to track.</p>
               ) : (
                 members.map((member) => (
-                  <div key={member.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border transition-colors bg-white shadow-sm ${attendance[member.id] ? "border-green-400" : "border-gray-100 hover:border-green-200"}`}>
-                    <div className="flex items-center gap-4 mb-2 sm:mb-0">
+                  <div key={member.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border transition-colors bg-white shadow-sm gap-3 ${attendance[member.id] ? "border-green-400" : "border-gray-100 hover:border-green-200"}`}>
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                       <Checkbox 
                         id={member.id} 
                         checked={!!attendance[member.id]} 
                         onCheckedChange={() => handleToggleAttendance(member.id)}
                         className="w-5 h-5 text-green-600 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 shrink-0"
                       />
-                      <Label htmlFor={member.id} className="cursor-pointer min-w-0">
-                        <p className="font-bold text-black text-base truncate">{member.name}</p>
+                      <Label htmlFor={member.id} className="cursor-pointer min-w-0 flex-1">
+                        <p className="font-bold text-black text-sm sm:text-base truncate">{member.name}</p>
                         <p className="text-xs text-gray-500 mt-0.5 truncate">{member.email || "No email"}</p>
                       </Label>
                     </div>
-                    <Badge variant="outline" className={attendance[member.id] ? "bg-green-100 text-green-800 border-green-300 px-3 py-1 font-bold w-fit" : "bg-gray-50 text-gray-500 border-gray-200 px-3 py-1 font-medium w-fit"}>
+                    <Badge variant="outline" className={attendance[member.id] ? "bg-green-100 text-green-800 border-green-300 px-3 py-1 font-bold w-fit self-start sm:self-auto shrink-0" : "bg-gray-50 text-gray-500 border-gray-200 px-3 py-1 font-medium w-fit self-start sm:self-auto shrink-0"}>
                       {attendance[member.id] ? "Present" : "Absent"}
                     </Badge>
                   </div>
@@ -235,7 +235,7 @@ export function AttendancePage() {
             <div className="mt-4 pt-4 border-t border-gray-100 flex-none">
               <Button 
                 onClick={handleSaveAttendance} 
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-6 text-lg transition-all" 
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-5 sm:py-6 text-base sm:text-lg transition-all" 
                 disabled={isSaving || members.length === 0}
               >
                 {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />} 
