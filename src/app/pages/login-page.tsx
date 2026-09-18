@@ -64,7 +64,7 @@ export function LoginPage() {
             <div className="mx-auto w-28 h-28 bg-green-50 rounded-full flex items-center justify-center p-3 overflow-hidden border border-green-200 shadow-sm relative">
               {!logoFailed ? (
                 <img 
-                  src="/church-logo.png" 
+                  src="src\church-logo.png" 
                   alt="Bete Ardete Logo" 
                   className="w-full h-full object-contain"
                   onError={() => setLogoFailed(true)} 
