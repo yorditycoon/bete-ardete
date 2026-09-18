@@ -72,15 +72,29 @@ export function DepartmentTaskBoard({ departmentId, currentUser, accentColor = "
     }
     setIsAdding(true);
     try {
-      const { error } = await supabase.from('department_tasks').insert({
+      // 1. Insert the new task and return the inserted data
+      const { data: insertedTask, error } = await supabase.from('department_tasks').insert({
         title: newTask.title,
         department_id: departmentId,
         assigned_to: newTask.assigned_to,
         created_by: currentUser.id,
         due_date: newTask.due_date,
         status: 'pending'
-      });
+      }).select().single();
+      
       if (error) throw error;
+
+      // 2. Trigger Notification to the assigned user
+      if (insertedTask && insertedTask.assigned_to) {
+        await supabase.from('notifications').insert({
+          user_id: insertedTask.assigned_to,
+          title: "New Task Assigned",
+          message: `You were assigned: "${insertedTask.title}"`,
+          type: "task",
+          link: "/app/department" 
+        });
+      }
+
       toast.success("Task assigned successfully!");
       setNewTask({ title: "", assigned_to: "", due_date: "" });
       setShowAddModal(false);
@@ -198,7 +212,7 @@ export function DepartmentTaskBoard({ departmentId, currentUser, accentColor = "
                   </div>
                 </div>
 
-                {/* Bottom Row: Actions (Only visible to assigned user or Head) */}
+                {/* Bottom Row: Actions */}
                 <div className="flex justify-end gap-2 border-t border-gray-50 pt-2 mt-1">
                   {(isAssignedToMe || isHead) && task.status === 'pending' && (
                     <Button size="sm" variant="outline" onClick={() => updateTaskStatus(task.id, 'in_progress')} className="h-7 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">
