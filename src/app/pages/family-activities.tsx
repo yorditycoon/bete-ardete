@@ -5,7 +5,7 @@ import { Progress } from "../components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { 
   User, BookOpen, Award, Mic, MessageSquare,
-  TrendingUp, CheckCircle, Loader2, BookMarked
+  Loader2, BookMarked
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { supabase } from "../lib/supabase";
@@ -122,8 +122,6 @@ export function FamilyActivities() {
       const completedReadings = bookReadings.filter(r => r.is_completed).length;
       const totalReadings = assignmentIds.length || 1; 
 
-      // THE FIX: Since the Read Aloud mic button is mandatory to finish a reading,
-      // the number of "Read Alouds" they have done equals their completed readings!
       const readAloudsCompleted = completedReadings;
 
       const avgScore = bookScores.length > 0 
@@ -139,7 +137,7 @@ export function FamilyActivities() {
         readings: { completed: completedReadings, total: totalReadings },
         quizzes: { score: avgScore, totalTaken: bookScores.length, totalAvailable: quizIds.length || 1, details: detailedScores },
         questions: questions,
-        recordings: readAloudsCompleted, // Updated logic here
+        recordings: readAloudsCompleted, 
       });
 
     } catch (error: any) {
@@ -153,26 +151,31 @@ export function FamilyActivities() {
     return (
       <div className="flex flex-col h-[50vh] items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-green-600 mb-4" />
-        <p className="text-muted-foreground animate-pulse">Loading family activities...</p>
+        <p className="text-gray-500 font-medium animate-pulse">Loading family activities...</p>
       </div>
     );
   }
 
+  // BarChart colors mapped to Green, Black, and Gray
   const chartData = memberStats ? [
     { id: "readings", activity: "Readings", completed: memberStats.readings.completed, total: memberStats.readings.total },
     { id: "quizzes", activity: "Quizzes Taken", completed: memberStats.quizzes.totalTaken, total: memberStats.quizzes.totalAvailable },
-    { id: "recordings", activity: "Read Alouds", completed: memberStats.recordings, total: memberStats.readings.total }, // Updated Label
+    { id: "recordings", activity: "Read Alouds", completed: memberStats.recordings, total: memberStats.readings.total }, 
   ] : [];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="bg-gradient-to-r from-green-100 to-green-50 rounded-xl p-8 border border-green-200 shadow-sm flex justify-between items-center">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
+      
+      {/* HEADER */}
+      <div className="bg-white rounded-xl p-6 sm:p-8 border border-green-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Family Activities</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-black mb-2 flex items-center gap-2">
+            Family Activities
+          </h2>
           <p className="text-gray-600 font-medium">Monitor your family members' spiritual progress</p>
         </div>
         {activeBook && (
-          <Badge variant="outline" className="hidden md:flex items-center gap-2 bg-white/80 border-green-300 text-green-800 px-4 py-2 text-sm shadow-sm">
+          <Badge variant="outline" className="flex items-center gap-2 bg-green-50 border-green-200 text-green-800 px-4 py-2 text-sm shadow-sm font-bold">
             <BookMarked className="w-4 h-4 text-green-600" />
             Current Study: {activeBook.title}
           </Badge>
@@ -180,31 +183,31 @@ export function FamilyActivities() {
       </div>
 
       {!activeBook ? (
-        <Card className="border-gray-200 border-dashed">
+        <Card className="border-gray-200 border-dashed bg-gray-50">
           <CardContent className="py-20 text-center">
             <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No Active Study Season</h3>
-            <p className="text-muted-foreground">Activity tracking will appear here once the Admin assigns a new book.</p>
+            <h3 className="text-xl font-bold text-black mb-2">No Active Study Season</h3>
+            <p className="text-gray-500">Activity tracking will appear here once the Admin assigns a new book.</p>
           </CardContent>
         </Card>
       ) : familyMembers.length === 0 ? (
-        <Card className="border-green-200 border-dashed">
+        <Card className="border-green-200 border-dashed bg-white">
           <CardContent className="py-20 text-center">
-            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-               <User className="w-10 h-10 text-green-300" />
+            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-100">
+               <User className="w-10 h-10 text-green-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No Family Members Found</h3>
-            <p className="text-muted-foreground">Register children in the Parent Dashboard to track their activities.</p>
+            <h3 className="text-xl font-bold text-black mb-2">No Family Members Found</h3>
+            <p className="text-gray-500">Register children in the Parent Dashboard to track their activities.</p>
           </CardContent>
         </Card>
       ) : (
         <>
-          <Card className="border-green-100 shadow-sm">
-            <CardHeader>
-              <CardTitle>Select Family Member</CardTitle>
-              <CardDescription>Choose a member to view their detailed activities</CardDescription>
+          <Card className="border-green-200 shadow-sm bg-white">
+            <CardHeader className="border-b border-gray-100 pb-4">
+              <CardTitle className="text-black">Select Family Member</CardTitle>
+              <CardDescription className="text-gray-500">Choose a member to view their detailed activities</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {familyMembers.map((member) => (
                   <button
@@ -212,21 +215,21 @@ export function FamilyActivities() {
                     onClick={() => setSelectedMember(member)}
                     className={`p-4 rounded-xl border transition-all text-left flex items-center gap-4 ${
                       selectedMember?.id === member.id
-                        ? "border-green-500 bg-green-50 shadow-md scale-[1.02]"
-                        : "border-gray-100 hover:border-green-300 hover:bg-gray-50"
+                        ? "border-green-600 bg-green-50 shadow-md scale-[1.02] ring-1 ring-green-600"
+                        : "border-gray-200 hover:border-green-400 hover:bg-gray-50"
                     }`}
                   >
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
-                       selectedMember?.id === member.id ? "bg-green-600 text-white" : "bg-green-100 text-green-700"
+                       selectedMember?.id === member.id ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700"
                     }`}>
                       {member.name[0]}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-gray-900 truncate">{member.name}</p>
-                        {member.role === 'parent' && <Badge variant="outline" className="text-[10px] h-5 px-1.5 bg-green-200 text-green-800 border-none">Parent</Badge>}
+                        <p className="font-bold text-black truncate">{member.name}</p>
+                        {member.role === 'parent' && <Badge variant="outline" className="text-[10px] h-5 px-1.5 bg-black text-white border-none font-bold">Parent</Badge>}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate font-mono">{member.email}</p>
+                      <p className="text-xs text-gray-500 truncate font-mono mt-0.5">{member.email}</p>
                     </div>
                   </button>
                 ))}
@@ -243,50 +246,54 @@ export function FamilyActivities() {
                   value={`${memberStats?.readings.completed || 0}/${memberStats?.readings.total || 0}`} 
                   label="Readings" 
                   progress={memberStats ? (memberStats.readings.completed / memberStats.readings.total) * 100 : 0} 
+                  color="green"
                 />
                 <MetricCard 
                   icon={Award} 
                   value={`${memberStats?.quizzes.score || 0}%`} 
                   label="Avg Score" 
                   progress={memberStats?.quizzes.score || 0} 
+                  color="black"
                 />
                 <MetricCard 
                   icon={Mic} 
                   value={memberStats?.recordings || 0} 
                   label="Read Alouds" 
                   progress={memberStats ? (memberStats.recordings / memberStats.readings.total) * 100 : 0} 
+                  color="green"
                 />
                 <MetricCard 
                   icon={MessageSquare} 
                   value={memberStats?.questions.length || 0} 
                   label="Questions Asked" 
                   progress={100} 
+                  color="gray"
                 />
               </div>
 
-              <Card className="border-green-100 shadow-sm mt-6">
-                <CardHeader>
-                  <CardTitle className="text-xl">{selectedMember.name}'s Activity Details</CardTitle>
+              <Card className="border-green-200 shadow-sm mt-6 bg-white">
+                <CardHeader className="border-b border-gray-100 pb-4">
+                  <CardTitle className="text-xl text-black">{selectedMember.name}'s Activity Details</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <Tabs defaultValue="progress" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 mb-6 bg-gray-50/50 p-1 rounded-xl border border-gray-100">
-                      <TabsTrigger value="progress" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">Progress Chart</TabsTrigger>
-                      <TabsTrigger value="questions" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">Questions</TabsTrigger>
-                      <TabsTrigger value="quizzes" className="hidden md:block rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">Quiz Results</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 mb-6 bg-gray-50 p-1 rounded-xl border border-gray-200">
+                      <TabsTrigger value="progress" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm font-bold">Progress Chart</TabsTrigger>
+                      <TabsTrigger value="questions" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm font-bold">Questions</TabsTrigger>
+                      <TabsTrigger value="quizzes" className="hidden md:block rounded-lg data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm font-bold">Quiz Results</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="progress" className="space-y-4">
-                      <div className="p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
-                        <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={chartData}>
+                      <div className="p-4 bg-white border border-gray-100 rounded-xl shadow-sm h-[350px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0fdf4" />
-                            <XAxis dataKey="activity" axisLine={false} tickLine={false} />
-                            <YAxis axisLine={false} tickLine={false} />
+                            <XAxis dataKey="activity" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                             <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0'}} />
-                            <Legend />
-                            <Bar dataKey="completed" fill="#22c55e" name="Completed" radius={[4, 4, 0, 0]} />
-                            <Bar dataKey="total" fill="#bbf7d0" name="Total Target" radius={[4, 4, 0, 0]} />
+                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                            <Bar dataKey="completed" fill="#16a34a" name="Completed" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                            <Bar dataKey="total" fill="#000000" name="Total Target" radius={[4, 4, 0, 0]} maxBarSize={60} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -294,28 +301,31 @@ export function FamilyActivities() {
 
                     <TabsContent value="questions" className="space-y-4">
                       {memberStats?.questions.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8 italic">No questions asked yet.</p>
+                        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                          <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-gray-500 font-medium">No questions asked yet.</p>
+                        </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                           {memberStats?.questions.map((q) => (
-                            <div key={q.id} className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-green-200 transition-colors">
+                            <div key={q.id} className="p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-green-300 transition-colors">
                               <div className="flex items-start justify-between gap-4 mb-3">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
                                     <MessageSquare className="w-4 h-4 text-green-600" />
-                                    <Badge variant="outline" className={q.answer ? "bg-green-50 text-green-700 border-green-200" : "bg-amber-50 text-amber-700 border-amber-200"}>
+                                    <Badge variant="outline" className={`font-bold ${q.answer ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
                                       {q.answer ? "Answered by Admin" : "Pending Answer"}
                                     </Badge>
                                   </div>
-                                  <p className="text-sm font-bold text-gray-900">Q: {q.question}</p>
+                                  <p className="text-sm font-bold text-black">Q: {q.question}</p>
                                   {q.answer && (
-                                    <div className="mt-3 p-3 bg-green-50/50 rounded-lg border border-green-100 text-sm text-gray-700">
-                                      <span className="font-bold text-green-800">A:</span> {q.answer}
+                                    <div className="mt-3 p-4 bg-green-50/50 rounded-xl border border-green-100 text-sm text-black shadow-sm">
+                                      <span className="font-black text-green-700">A:</span> {q.answer}
                                     </div>
                                   )}
                                 </div>
                               </div>
-                              <p className="text-[10px] text-gray-400 font-mono uppercase">Asked on {new Date(q.created_at).toLocaleDateString()}</p>
+                              <p className="text-[10px] text-gray-400 font-mono uppercase font-bold tracking-wider">Asked on {new Date(q.created_at).toLocaleDateString()}</p>
                             </div>
                           ))}
                         </div>
@@ -324,23 +334,26 @@ export function FamilyActivities() {
                     
                     <TabsContent value="quizzes" className="space-y-4">
                       {memberStats?.quizzes.details && memberStats.quizzes.details.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2">
                           {memberStats.quizzes.details.map((q, idx) => (
-                            <div key={idx} className="flex justify-between items-center p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-green-200 transition-colors">
+                            <div key={idx} className="flex justify-between items-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-green-300 transition-colors">
                               <div className="flex items-center gap-3">
-                                <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                                <div className="p-2 bg-green-50 border border-green-100 rounded-lg text-green-600">
                                   <Award className="w-5 h-5"/>
                                 </div>
                                 <div>
-                                  <p className="font-bold text-gray-900 text-sm">{q.quiz_title}</p>
+                                  <p className="font-bold text-black text-sm">{q.quiz_title}</p>
                                 </div>
                               </div>
-                              <Badge className="bg-green-100 text-green-800 text-sm font-black border border-green-200">{q.score}%</Badge>
+                              <Badge className="bg-black text-white text-sm font-black border-none px-3">{q.score}%</Badge>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-center text-gray-500 py-8 italic">No quizzes completed yet.</p>
+                        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                          <Award className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-gray-500 font-medium">No quizzes completed yet.</p>
+                        </div>
                       )}
                     </TabsContent>
 
@@ -356,20 +369,31 @@ export function FamilyActivities() {
 }
 
 // --- Sub-Component ---
-function MetricCard({ icon: Icon, value, label, progress }: any) {
+function MetricCard({ icon: Icon, value, label, progress, color }: any) {
+  const getColors = () => {
+    switch(color) {
+      case 'green': return { bg: 'bg-green-50', text: 'text-green-600', fill: '[&>div]:bg-green-600', barBg: 'bg-gray-100' };
+      case 'black': return { bg: 'bg-gray-100', text: 'text-black', fill: '[&>div]:bg-black', barBg: 'bg-gray-200' };
+      case 'gray': return { bg: 'bg-gray-50', text: 'text-gray-500', fill: '[&>div]:bg-gray-400', barBg: 'bg-gray-200' };
+      default: return { bg: 'bg-green-50', text: 'text-green-600', fill: '[&>div]:bg-green-600', barBg: 'bg-gray-100' };
+    }
+  };
+  
+  const colors = getColors();
+
   return (
-    <Card className="border-green-100 shadow-sm">
+    <Card className="border-gray-200 shadow-sm bg-white hover:border-green-300 transition-colors">
       <CardContent className="pt-6">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-green-50 rounded-xl">
-            <Icon className="w-6 h-6 text-green-600" />
+          <div className={`p-3 ${colors.bg} rounded-xl`}>
+            <Icon className={`w-6 h-6 ${colors.text}`} />
           </div>
           <div>
-            <p className="text-2xl font-black text-gray-900">{value}</p>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+            <p className="text-2xl font-black text-black">{value}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">{label}</p>
           </div>
         </div>
-        <Progress value={progress} className="mt-4 h-2 bg-green-50" />
+        <Progress value={progress} className={`mt-4 h-2 ${colors.barBg} ${colors.fill}`} />
       </CardContent>
     </Card>
   );

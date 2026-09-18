@@ -53,13 +53,13 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-50 to-white p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 animate-in fade-in duration-500">
       
       <div className="w-full max-w-md">
-        <Card className="border-green-200 shadow-lg">
-          <CardHeader className="text-center space-y-4">
+        <Card className="border-green-200 shadow-xl bg-white rounded-2xl overflow-hidden">
+          <CardHeader className="text-center space-y-4 pt-8">
             
-            <div className="mx-auto w-32 h-32 bg-green-50 rounded-full flex items-center justify-center p-3 overflow-hidden border border-green-100 shadow-sm">
+            <div className="mx-auto w-28 h-28 bg-green-50 rounded-full flex items-center justify-center p-3 overflow-hidden border border-green-200 shadow-sm">
               <img 
                 src="/church-logo.png" 
                 alt="Bete Ardete Logo" 
@@ -71,16 +71,17 @@ export function LoginPage() {
             </div>
 
             <div>
-              <CardTitle className="text-3xl font-bold text-gray-900">Bete Ardete</CardTitle>
-              <CardDescription className="text-base mt-2 font-medium text-gray-500">
+              <CardTitle className="text-3xl font-black text-black">Bete Ardete</CardTitle>
+              <CardDescription className="text-sm mt-1 font-semibold text-gray-500 uppercase tracking-widest">
                 Family Management System
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="pb-6">
+          
+          <CardContent className="pb-8 px-6 sm:px-8">
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2 text-left">
-                <Label htmlFor="email" className="font-bold text-gray-700">Email</Label>
+              <div className="space-y-1.5 text-left">
+                <Label htmlFor="email" className="font-bold text-black text-xs uppercase tracking-wider">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -88,11 +89,11 @@ export function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="border-green-200 focus-visible:ring-green-600 focus-visible:border-green-600"
+                  className="border-green-200 focus-visible:ring-green-600 focus-visible:border-green-600 h-12 text-black font-medium"
                 />
               </div>
-              <div className="space-y-2 text-left">
-                <Label htmlFor="password" className="font-bold text-gray-700">Password</Label>
+              <div className="space-y-1.5 text-left">
+                <Label htmlFor="password" className="font-bold text-black text-xs uppercase tracking-wider">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -100,30 +101,22 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="border-green-200 focus-visible:ring-green-600 focus-visible:border-green-600"
+                  className="border-green-200 focus-visible:ring-green-600 focus-visible:border-green-600 h-12 text-black font-medium"
                 />
               </div>
               <Button 
                 type="submit" 
-                className="w-full bg-green-600 hover:bg-green-700 font-bold text-white shadow-md transition-all py-6 text-lg mt-2" 
+                className="w-full bg-green-600 hover:bg-green-700 font-bold text-white shadow-md transition-all py-6 text-lg mt-4 rounded-xl" 
                 disabled={isLoading}
               >
                 {isLoading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 
-            {/* Agency Branding Footer - Now inside the box */}
-            <div className="mt-8 pt-5 border-t border-gray-100 text-center">
-              <p className="text-xs sm:text-sm text-gray-400 font-medium">
-                Powered by{" "}
-                <a 
-                  href="https://www.novacreativesolutions.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-green-600 hover:text-green-700 font-bold hover:underline transition-colors"
-                >
-                  Nova Creatives
-                </a>
+            {/* Custom Footer Message */}
+            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+              <p className="text-sm text-gray-500 font-bold tracking-wide">
+                developed by በፀሎታችሁ አስቡኝ 🙏
               </p>
             </div>
           </CardContent>

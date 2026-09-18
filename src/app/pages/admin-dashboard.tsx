@@ -4,55 +4,13 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { 
   Users, BookOpen, Calendar, 
-  MessageSquare, UserCheck, Settings, FolderTree, Loader2, Mic, Award
+  MessageSquare, UserCheck, Settings, FolderTree, Loader2, Mic, Award,
+  ShieldCheck, CheckSquare, Video, Presentation,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { 
-  XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, LineChart, Line 
-} from "recharts";
+import { BarChart, Bar,Line, XAxis, LineChart, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+
 import { useNavigate } from "react-router";
-import { LucideIcon } from "lucide-react";
-
-interface DashboardCardProps {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  href: string;
-  color: string;
-}
-
-export function DashboardCard({ title, description, icon: Icon, href, color }: DashboardCardProps) {
-  const navigate = useNavigate();
-
-  return (
-    <button
-      onClick={() => navigate(href)}
-      className="group relative bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left w-full overflow-hidden"
-    >
-      <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-10 transition-transform group-hover:scale-150 ${color}`} />
-      
-      <div className="flex flex-col gap-4 relative z-10">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg ${color}`}>
-          <Icon className="w-6 h-6" />
-        </div>
-        
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 group-hover:text-green-700 transition-colors">
-            {title}
-          </h3>
-          <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-            {description}
-          </p>
-        </div>
-
-        <div className="flex items-center text-xs font-bold text-green-600 uppercase tracking-wider mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          Open Section →
-        </div>
-      </div>
-    </button>
-  );
-}
 
 // --- TypeScript Interfaces ---
 interface DashboardStats {
@@ -69,7 +27,7 @@ interface FamilyStat {
   name: string;
   memberCount: number;
   readingsCompleted: number;
-  parentLessons: number; // Updated label
+  parentLessons: number; 
   avgQuizScore: number;
   attendanceRate: number;
 }
@@ -94,7 +52,10 @@ export function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   
-  // Overall Community Stats
+  // Admin Profile State
+  const [profile, setProfile] = useState<any>(null);
+
+  // Overall Community Stats (For IT Admin)
   const [stats, setStats] = useState<DashboardStats>({
     members: 0,
     parents: 0,
@@ -106,13 +67,12 @@ export function AdminDashboard() {
 
   // Stats aggregated by Family
   const [familyStats, setFamilyStats] = useState<FamilyStat[]>([]);
-  
-  // State to hold real-time chart data
   const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
 
+    // Only subscribe to realtime if they stay on this page
     const channel = supabase.channel('admin-stats-realtime')
       .on('postgres_changes', { event: '*', schema: 'public' }, () => {
         fetchDashboardData();
@@ -125,18 +85,31 @@ export function AdminDashboard() {
   async function fetchDashboardData() {
     setLoading(true);
     try {
+      // 1. Fetch current user profile to determine Department
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return navigate("/");
+
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*, departments(name_en, name_am)')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      setProfile(userProfile);
+
+      // If they are a Department Head, we don't need to load the massive IT stats
+      if (userProfile.department_id) {
+        setLoading(false);
+        return; 
+      }
+
+      // 2. Fetch IT Super Admin Stats
       const today = new Date();
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const startStr = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, '0')}-01`;
 
-      const { data: adminStats, error: statsError } = await supabase
-        .from('admin_stats')
-        .select('*')
-        .single();
-
-      if (statsError) {
-        console.error("Error loading admin_stats view:", statsError);
-      }
+      const { data: adminStats } = await supabase.from('admin_stats').select('*').single();
 
       const [
         { data: allFamilies },
@@ -175,8 +148,6 @@ export function AdminDashboard() {
 
           const fReadings = (allReadings || []).filter(r => profileIds.includes(r.user_id));
           const completedReadings = fReadings.filter(r => r.is_completed).length;
-          
-          // This counts actual uploaded MP3s by the parents
           const voiceRecordings = fReadings.filter(r => r.voice_recording_url).length;
 
           const fQuizzes = (allQuizzes || []).filter(q => profileIds.includes(q.user_id));
@@ -194,7 +165,7 @@ export function AdminDashboard() {
             name: family.name,
             memberCount: fProfiles.length,
             readingsCompleted: completedReadings,
-            parentLessons: voiceRecordings, // Updated variable
+            parentLessons: voiceRecordings,
             avgQuizScore: avgQuiz,
             attendanceRate: attRate
           };
@@ -236,60 +207,152 @@ export function AdminDashboard() {
     }
   }
 
-  const totalCommunity = stats.members + stats.parents + stats.admins;
-  const safeTotal = Math.max(1, totalCommunity);
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-green-600 mb-4" />
-        <p className="text-muted-foreground animate-pulse">Gathering community insights...</p>
+        <p className="text-muted-foreground animate-pulse">Loading dashboard...</p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-green-600 to-green-500 rounded-xl p-8 text-white shadow-md flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold">Admin Dashboard</h2>
-          <p className="opacity-90 mt-1 font-medium">Monitoring the spiritual growth of the congregation.</p>
+  const departmentName = profile?.departments?.name_en;
+
+  // ==========================================
+  // 1. EDUCATION DEPARTMENT VIEW (Fallback)
+  // ==========================================
+  if (departmentName === "Education") {
+    return (
+      <div className="space-y-6 max-w-6xl mx-auto pb-12">
+        <div className="bg-white rounded-xl p-8 border border-green-200 shadow-sm">
+          <h2 className="text-3xl font-black text-black flex items-center gap-2">
+            <BookOpen className="w-8 h-8 text-green-600" /> Education Department
+          </h2>
+          <p className="text-gray-600 font-medium mt-2">Manage curriculum, study books, and quizzes.</p>
         </div>
-        <Settings className="w-16 h-16 opacity-20 hidden md:block" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="border-green-200 shadow-sm hover:border-green-400 transition-colors cursor-pointer bg-white" onClick={() => navigate("/app/admin-controls")}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100"><BookOpen className="w-8 h-8 text-green-600" /></div>
+              <div>
+                <CardTitle className="text-xl text-black">Curriculum Manager</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">Create books and reading assignments.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-200 shadow-sm hover:border-green-400 transition-colors cursor-pointer bg-white" onClick={() => navigate("/app/quiz")}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200"><CheckSquare className="w-8 h-8 text-black" /></div>
+              <div>
+                <CardTitle className="text-xl text-black">Quiz & Grades</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">Review knowledge checks and test scores.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 2. MEDIA DEPARTMENT VIEW (Fallback)
+  // ==========================================
+  if (departmentName === "Media") {
+    return (
+      <div className="space-y-6 max-w-6xl mx-auto pb-12">
+        <div className="bg-white rounded-xl p-8 border border-green-200 shadow-sm">
+          <h2 className="text-3xl font-black text-black flex items-center gap-2">
+            <Video className="w-8 h-8 text-green-600" /> Media Department
+          </h2>
+          <p className="text-gray-600 font-medium mt-2">Manage camera schedules, live streams, and content.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="border-green-200 shadow-sm bg-white">
+            <CardContent className="p-6 flex items-center gap-4 opacity-70">
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100"><Presentation className="w-8 h-8 text-green-600" /></div>
+              <div>
+                <CardTitle className="text-xl text-black">Stream Schedule</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">Media tools coming soon.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 3. FALLBACK DEPARTMENTS
+  // ==========================================
+  if (departmentName) {
+    return (
+      <div className="space-y-6 max-w-6xl mx-auto pb-12">
+        <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
+          <h2 className="text-3xl font-black text-black">{profile.departments?.name_en} Department</h2>
+          <p className="text-gray-600 font-medium mt-2">{profile.departments?.name_am}</p>
+        </div>
+        <Card className="border-gray-200 shadow-sm text-center py-12 bg-white">
+          <Settings className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <CardTitle className="text-xl text-black">Workspace Under Construction</CardTitle>
+          <p className="text-gray-500 mt-2">Custom tools for this department are being developed.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 4. IT SUPER ADMIN VIEW (Fully Styled Theme)
+  // ==========================================
+  const totalCommunity = stats.members + stats.parents + stats.admins;
+  const safeTotal = Math.max(1, totalCommunity);
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
+      {/* Welcome Banner */}
+      <div className="bg-black rounded-xl p-8 text-white shadow-md flex justify-between items-center border border-gray-800">
+        <div>
+          <h2 className="text-3xl font-black flex items-center gap-2">
+            <ShieldCheck className="w-8 h-8 text-green-500" /> System IT Control
+          </h2>
+          <p className="text-gray-400 font-medium mt-2">Global administration and department assignments.</p>
+        </div>
+        <Settings className="w-16 h-16 text-gray-800 hidden md:block" />
       </div>
 
       {/* Metric Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Custom Community Breakdown Card */}
-        <Card className="border-green-100 shadow-sm hover:bg-green-50/20 transition-all">
+        <Card className="border-gray-200 shadow-sm bg-white hover:border-green-300 transition-all">
           <CardContent className="pt-6">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Community</p>
-                <p className="text-3xl font-bold text-gray-800">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Total Community</p>
+                <p className="text-3xl font-black text-black">
                   {totalCommunity}
                 </p>
               </div>
-              <Users className="w-8 h-8 text-green-200" />
+              <Users className="w-8 h-8 text-green-100" />
             </div>
             
             <div className="space-y-2 mt-4">
               <div className="flex w-full h-2 rounded-full overflow-hidden bg-gray-100">
-                <div style={{ width: `${(stats.members / safeTotal) * 100}%` }} className="bg-green-500 transition-all duration-500" />
-                <div style={{ width: `${(stats.parents / safeTotal) * 100}%` }} className="bg-blue-500 transition-all duration-500" />
-                <div style={{ width: `${(stats.admins / safeTotal) * 100}%` }} className="bg-purple-500 transition-all duration-500" />
+                <div style={{ width: `${(stats.parents / safeTotal) * 100}%` }} className="bg-black transition-all duration-500" />
+                <div style={{ width: `${(stats.members / safeTotal) * 100}%` }} className="bg-green-600 transition-all duration-500" />
+                <div style={{ width: `${(stats.admins / safeTotal) * 100}%` }} className="bg-gray-400 transition-all duration-500" />
               </div>
-              <div className="flex justify-between text-[10px] font-medium text-gray-500 pt-1">
+              <div className="flex justify-between text-[10px] font-bold text-gray-500 pt-1">
                 <div className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500" /> {stats.members} Mbrs
+                  <span className="w-2 h-2 rounded-full bg-black" /> {stats.parents} Ldrs
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" /> {stats.parents} Prnts
+                  <span className="w-2 h-2 rounded-full bg-green-600" /> {stats.members} Mbrs
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-purple-500" /> {stats.admins} Admns
+                  <span className="w-2 h-2 rounded-full bg-gray-400" /> {stats.admins} IT
                 </div>
               </div>
             </div>
@@ -310,7 +373,7 @@ export function AdminDashboard() {
           alert={stats.pendingQuestions > 0}
         />
         <MetricCard 
-          label="Avg. Attendance" 
+          label="Global Attendance" 
           value={`${stats.attendanceRate}%`} 
           icon={UserCheck} 
           sub="Rate for current month" 
@@ -320,21 +383,22 @@ export function AdminDashboard() {
       {/* Quick Action Navigation */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <ActionButton 
+          icon={Users} 
+          title="Directory" 
+          desc="Assign department roles" 
+          onClick={() => navigate("/app/directory")} 
+          highlight
+        />
+        <ActionButton 
           icon={FolderTree} 
           title="Families" 
-          desc="Assign parents to members" 
+          desc="Manage household groups" 
           onClick={() => navigate("/app/family-management")} 
         />
         <ActionButton 
-          icon={BookOpen} 
-          title="Controls" 
-          desc="Quizzes & Readings" 
-          onClick={() => navigate("/app/admin-controls")} 
-        />
-        <ActionButton 
           icon={UserCheck} 
-          title="Attendance" 
-          desc="Mark Saturday gathering" 
+          title="Saturday Service" 
+          desc="Mark congregation attendance" 
           onClick={() => navigate("/app/attendance")} 
         />
         <ActionButton 
@@ -342,27 +406,26 @@ export function AdminDashboard() {
           title="Questions" 
           desc={`Resolve ${stats.pendingQuestions} items`} 
           onClick={() => navigate("/app/questions")} 
-          highlight={stats.pendingQuestions > 0}
         />
       </div>
 
       {/* Family Performance Overview Table */}
-      <Card className="border-green-100 shadow-sm overflow-hidden">
+      <Card className="border-gray-200 shadow-sm overflow-hidden bg-white">
         <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
-          <CardTitle className="text-lg text-gray-900">Family Performance Overview</CardTitle>
-          <CardDescription>Aggregated metrics for all registered households (Parents + Children)</CardDescription>
+          <CardTitle className="text-lg text-black">Family Performance Overview</CardTitle>
+          <CardDescription>Aggregated metrics for all registered households</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-[10px] text-gray-500 uppercase tracking-widest bg-gray-50">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="text-[10px] text-gray-500 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-4 font-bold whitespace-nowrap">Family Name</th>
-                  <th className="px-6 py-4 font-bold text-center whitespace-nowrap">Total Members</th>
-                  <th className="px-6 py-4 font-bold text-center whitespace-nowrap">Readings Done</th>
-                  <th className="px-6 py-4 font-bold text-center whitespace-nowrap">Parent Lessons</th>
-                  <th className="px-6 py-4 font-bold text-center whitespace-nowrap">Avg Quiz Score</th>
-                  <th className="px-6 py-4 font-bold text-center whitespace-nowrap">Attendance</th>
+                  <th className="px-6 py-4 font-bold">Family Name</th>
+                  <th className="px-6 py-4 font-bold text-center">Total Members</th>
+                  <th className="px-6 py-4 font-bold text-center">Readings Done</th>
+                  <th className="px-6 py-4 font-bold text-center">Parent Lessons</th>
+                  <th className="px-6 py-4 font-bold text-center">Avg Quiz Score</th>
+                  <th className="px-6 py-4 font-bold text-center">Attendance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -374,31 +437,31 @@ export function AdminDashboard() {
                   </tr>
                 ) : (
                   familyStats.map((family) => (
-                    <tr key={family.id} className="hover:bg-green-50/30 transition-colors">
-                      <td className="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">{family.name}</td>
+                    <tr key={family.id} className="hover:bg-green-50/50 transition-colors">
+                      <td className="px-6 py-4 font-bold text-black">{family.name}</td>
                       <td className="px-6 py-4 text-center">
-                        <Badge variant="outline" className="bg-gray-50 text-gray-700">{family.memberCount}</Badge>
+                        <Badge variant="outline" className="bg-gray-50 text-black border-gray-200">{family.memberCount}</Badge>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-green-700 font-medium">
-                          <BookOpen className="w-4 h-4 opacity-50" />
+                        <div className="flex items-center justify-center gap-1.5 text-green-700 font-bold">
+                          <BookOpen className="w-4 h-4 text-green-600 opacity-50" />
                           {family.readingsCompleted}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-blue-700 font-medium">
+                        <div className="flex items-center justify-center gap-1.5 text-black font-bold">
                           <Mic className="w-4 h-4 opacity-50" />
                           {family.parentLessons}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-amber-700 font-medium">
+                        <div className="flex items-center justify-center gap-1.5 text-gray-600 font-bold">
                           <Award className="w-4 h-4 opacity-50" />
                           {family.avgQuizScore}%
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-purple-700 font-medium">
+                        <div className="flex items-center justify-center gap-1.5 text-black font-bold">
                           <UserCheck className="w-4 h-4 opacity-50" />
                           {family.attendanceRate}%
                         </div>
@@ -413,16 +476,16 @@ export function AdminDashboard() {
       </Card>
 
       {/* Trends Chart */}
-      <Card className="border-green-100 shadow-sm">
+      <Card className="border-gray-200 shadow-sm bg-white">
         <CardHeader>
-          <CardTitle className="text-lg">Engagement Trends</CardTitle>
+          <CardTitle className="text-lg text-black">Global Education Engagement</CardTitle>
           <CardDescription>Activity levels across the last 4 weeks</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0fdf4" />
                 <XAxis 
                   dataKey="week" 
                   axisLine={false} 
@@ -438,8 +501,9 @@ export function AdminDashboard() {
                 <Tooltip 
                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
                 />
-                <Line type="monotone" dataKey="readings" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} name="Readings" />
-                <Line type="monotone" dataKey="quizzes" stroke="#34d399" strokeWidth={3} dot={{ r: 4 }} name="Quizzes" />
+                <Legend iconType="circle" />
+                <Line type="monotone" dataKey="readings" stroke="#16a34a" strokeWidth={3} dot={{ r: 4 }} name="Readings" />
+                <Line type="monotone" dataKey="quizzes" stroke="#000000" strokeWidth={3} dot={{ r: 4 }} name="Quizzes" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -450,18 +514,17 @@ export function AdminDashboard() {
 }
 
 // --- Sub-Components ---
-
 function MetricCard({ label, value, icon: Icon, sub, alert = false }: MetricCardProps) {
   return (
-    <Card className={`border-green-100 shadow-sm transition-all ${alert ? "border-amber-300 bg-amber-50/50" : "hover:bg-green-50/20"}`}>
+    <Card className={`border-gray-200 shadow-sm transition-all bg-white hover:border-green-300 ${alert ? "border-red-200 ring-1 ring-red-100" : ""}`}>
       <CardContent className="pt-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">{label}</p>
-            <p className="text-3xl font-bold text-gray-800">{value}</p>
-            <p className="text-[11px] text-muted-foreground mt-2 font-medium">{sub}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">{label}</p>
+            <p className={`text-3xl font-black ${alert ? "text-red-600" : "text-black"}`}>{value}</p>
+            <p className="text-[11px] text-gray-400 mt-2 font-medium">{sub}</p>
           </div>
-          <Icon className={`w-8 h-8 ${alert ? "text-amber-500 animate-pulse" : "text-green-200"}`} />
+          <Icon className={`w-8 h-8 ${alert ? "text-red-500 animate-pulse" : "text-green-100"}`} />
         </div>
       </CardContent>
     </Card>
@@ -473,14 +536,16 @@ function ActionButton({ icon: Icon, title, desc, onClick, highlight = false }: A
     <Button 
       variant="outline" 
       onClick={onClick}
-      className={`h-auto flex flex-col items-start p-6 space-y-2 border-green-100 hover:border-green-300 hover:bg-green-50 transition-all text-left w-full ${
-        highlight ? "ring-2 ring-green-500 ring-offset-4 bg-green-50/50" : ""
+      className={`h-auto flex flex-col items-start p-6 space-y-2 border-gray-200 transition-all text-left w-full ${
+        highlight 
+          ? "ring-2 ring-green-600 ring-offset-2 bg-green-50 border-green-200 hover:bg-green-100" 
+          : "hover:border-green-400 hover:bg-green-50/50 bg-white"
       }`}
     >
-      <Icon className="w-6 h-6 text-green-600" />
+      <Icon className={`w-6 h-6 ${highlight ? "text-green-600" : "text-black"}`} />
       <div>
-        <p className="font-bold text-gray-900">{title}</p>
-        <p className="text-xs text-muted-foreground leading-snug mt-1">{desc}</p>
+        <p className="font-bold text-black">{title}</p>
+        <p className="text-xs text-gray-500 font-medium leading-snug mt-1">{desc}</p>
       </div>
     </Button>
   );

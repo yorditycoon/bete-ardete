@@ -1,11 +1,10 @@
 import { Outlet, useNavigate, useLocation } from "react-router";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
-
 import { 
-  Home, BookOpen, Calendar, MessageSquare, User,Users,
+  Home, BookOpen, Calendar, MessageSquare, User, Users,
   Settings, LogOut, CheckSquare, ClipboardList, 
-  UserCheck, FolderTree, Loader2, ShieldCheck, Menu, X 
+  UserCheck, FolderTree, Loader2, ShieldCheck, Menu, X, Activity
 } from "lucide-react"; 
 import { toast } from "sonner";
 import { supabase } from "../../lib/supabase"; 
@@ -40,9 +39,10 @@ export function MainLayout() {
           return;
         }
 
+        // Fetch profile WITH the department name to check for Education HQ access
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, departments(name_en)')
           .eq('id', user.id)
           .single();
 
@@ -57,14 +57,26 @@ export function MainLayout() {
         const path = location.pathname;
         let hasPermission = true;
 
-        const adminOnly = ["/app/admin-dashboard", "/app/admin-controls", "/app/attendance", "/app/members"];
+        const isSuperAdmin = profile.role === "admin"; // Original IT Admin
+        const isDeptHead = profile.department_role === "head"; // New Education/Media Heads
+        const hasAdminAccess = isSuperAdmin || isDeptHead;
+
+        // Added /app/education-workspace to the protected admin paths
+        const adminOnly = [
+          "/app/admin-dashboard", 
+          "/app/attendance", 
+          "/app/members", 
+          "/app/directory", 
+          "/app/session-control",
+          "/app/education-workspace"
+        ];
         const parentOrAdmin = ["/app/family-management", "/app/family-activities", "/app/parent-dashboard"];
         
-        if (adminOnly.some(p => path.startsWith(p)) && profile.role !== "admin") {
+        if (adminOnly.some(p => path.startsWith(p)) && !hasAdminAccess) {
           hasPermission = false;
         }
 
-        if (parentOrAdmin.some(p => path.startsWith(p)) && profile.role === "member") {
+        if (parentOrAdmin.some(p => path.startsWith(p)) && profile.role === "member" && !hasAdminAccess) {
           hasPermission = false;
         }
 
@@ -94,7 +106,7 @@ export function MainLayout() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    sessionStorage.removeItem("currentUser");
+    localStorage.removeItem("currentUser");
     toast.success("Logged out successfully");
     navigate("/");
   };
@@ -113,20 +125,31 @@ export function MainLayout() {
 
   if (!isAuthorized || !currentUser) return null;
 
+  // Derive access levels for the sidebar nav
+  const isSuperAdmin = currentUser.role === "admin";
+  const isDeptHead = currentUser.department_role === "head";
+  const hasAdminAccess = isSuperAdmin || isDeptHead;
+  const isParent = currentUser.role === "parent";
+  const isEducationTeam = currentUser.departments?.name_en === "Education";
+
+  // Dynamic Navigation Items based on the dual roles
   const navItems = [
-    { path: getDashboardPath(currentUser.role), icon: Home, label: "Dashboard", roles: ["member", "parent", "admin"] },
-    { path: "/app/profile", icon: User, label: "My Profile", roles: ["member", "parent"] },
-    { path: "/app/family-management", icon: FolderTree, label: "Family Management", roles: ["admin"] },
-    { path: "/app/bible", icon: BookOpen, label: "Bible Reading", roles: ["member", "parent"] },
-    { path: "/app/quiz", icon: CheckSquare, label: "Quizzes", roles: ["member", "parent"] },
-    { path: "/app/calendar", icon: Calendar, label: "Calendar", roles: ["member", "parent", "admin"] },
-    { path: "/app/questions", icon: MessageSquare, label: "Questions", roles: ["member", "parent", "admin"] },
-    { path: "/app/family-activities", icon: ClipboardList, label: "Family Activities", roles: ["parent"] },
-    { path: "/app/attendance", icon: UserCheck, label: "Attendance", roles: ["admin"] },
-    { path: "/app/admin-controls", icon: Settings, label: "Admin Controls", roles: ["admin"] },
-    { path: "/app/directory", icon: Users, label: "Directory", roles: ["admin"] },
-    { path: "/app/session-control", icon: Users, label: "Session Control", roles: ["admin"] },
-  ].filter(item => item.roles.includes(currentUser.role));
+    { path: getDashboardPath(currentUser.role), icon: Home, label: "Dashboard", show: true },
+    { path: "/app/profile", icon: User, label: "My Profile", show: !isSuperAdmin }, // Regular profile for members/parents
+    { path: "/app/family-management", icon: FolderTree, label: "Family Management", show: isSuperAdmin },
+    { path: "/app/bible", icon: BookOpen, label: "Bible Reading", show: !isSuperAdmin },
+    { path: "/app/quiz", icon: CheckSquare, label: "Quizzes", show: !isSuperAdmin },
+    { path: "/app/calendar", icon: Calendar, label: "Calendar", show: true },
+    { path: "/app/questions", icon: MessageSquare, label: "Questions", show: true },
+    { path: "/app/family-activities", icon: ClipboardList, label: "Family Activities", show: isParent },
+    { path: "/app/attendance", icon: UserCheck, label: "Attendance", show: isSuperAdmin },
+    
+    // Dynamically show Education HQ only to Education Dept Heads (or Super Admins)
+    { path: "/app/education-workspace", icon: Settings, label: "Education HQ", show: hasAdminAccess && isEducationTeam },
+    
+    { path: "/app/directory", icon: Users, label: "Directory", show: isSuperAdmin },
+    { path: "/app/session-control", icon: Activity, label: "Session Control", show: isSuperAdmin },
+  ].filter(item => item.show);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex flex-col relative">
@@ -143,7 +166,6 @@ export function MainLayout() {
               {isMobileMenuOpen ? <X className="text-gray-600" /> : <Menu className="text-gray-600" />}
             </Button>
             
-            {/* THE FIX: Grouped Logo & Title into a clickable area */}
             <div 
               className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
@@ -166,7 +188,7 @@ export function MainLayout() {
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
              <div className="text-right hidden sm:block">
                <p className="text-sm font-bold text-gray-900">{currentUser.full_name || currentUser.name}</p>
-               <p className="text-[10px] text-green-600 uppercase font-bold tracking-widest">{currentUser.role}</p>
+               <p className="text-[10px] text-green-600 uppercase font-bold tracking-widest">{isSuperAdmin ? "IT Super Admin" : (isDeptHead ? "Department Head" : currentUser.role)}</p>
              </div>
              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-red-500 hover:bg-red-50">
                <LogOut className="w-4 h-4" />

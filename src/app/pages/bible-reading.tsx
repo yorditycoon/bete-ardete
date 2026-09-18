@@ -210,14 +210,15 @@ export function BibleReading() {
   const progressPercentage = totalCount === 0 ? 0 : (completedCount / totalCount) * 100;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
       
-      <div className="bg-gradient-to-r from-green-100 to-green-50 rounded-xl p-4 sm:p-6 border border-green-200 flex items-center justify-between shadow-sm">
+      {/* HEADER */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 border border-green-200 flex items-center justify-between shadow-sm">
         <div>
-          <h2 className="text-xl sm:text-2xl mb-1 font-bold text-green-900 flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl mb-1 font-black text-black flex items-center gap-2">
             <BookMarked className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 shrink-0" /> Study: {activeBook.title}
           </h2>
-          <p className="text-sm sm:text-base text-green-700 font-medium">
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
             {isParent ? "Read, record your explanation, and upload your notes." : "Listen to your parent's lesson and complete the reading."}
           </p>
         </div>
@@ -226,21 +227,20 @@ export function BibleReading() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* --- SIDEBAR --- */}
-        <Card className="lg:col-span-1 border-green-200 shadow-sm flex flex-col h-fit lg:sticky top-20 z-10">
+        <Card className="lg:col-span-1 border-green-200 shadow-sm flex flex-col h-fit lg:sticky top-20 z-10 bg-white">
           <CardHeader className="p-4 sm:p-5 bg-gray-50/50 border-b border-gray-100 flex-none">
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center gap-2 text-black">
               <History className="w-5 h-5 text-green-600" /> Plan & History
             </CardTitle>
             <div className="mt-4 space-y-1">
               <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <span>Overall Progress</span>
-                <span className="text-green-700">{completedCount} / {totalCount}</span>
+                <span className="text-black">{completedCount} / {totalCount}</span>
               </div>
-              <Progress value={progressPercentage} className="h-2 bg-green-600" />
+              <Progress value={progressPercentage} className="h-2 bg-gray-100" />
             </div>
           </CardHeader>
           
-          {/* UPDATED MOBILE-RESPONSIVE CONTENT AREA */}
           <CardContent className="p-3 sm:p-4 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-hidden lg:overflow-y-auto gap-3 lg:max-h-[600px] snap-x pb-4 lg:pb-4 scrollbar-thin scrollbar-thumb-green-200">
             {readings.map((reading) => {
               const readingProgress = progress.find(p => p.reading_id === reading.id);
@@ -253,7 +253,7 @@ export function BibleReading() {
                   onClick={() => setSelectedReading(reading)}
                   className={`shrink-0 w-[240px] lg:w-full text-left p-3 sm:p-4 rounded-xl border transition-all snap-start ${
                     isActive 
-                      ? "border-green-600 bg-green-50 shadow-sm ring-1 ring-green-600" 
+                      ? "border-green-400 bg-green-50 shadow-sm ring-1 ring-green-600" 
                       : isDone 
                         ? "border-gray-100 bg-gray-50/50 hover:bg-gray-100" 
                         : "border-gray-200 bg-white hover:border-green-300"
@@ -262,16 +262,18 @@ export function BibleReading() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="w-full">
                       <div className="flex justify-between items-center w-full">
-                        <p className={`font-bold text-sm sm:text-base ${isActive ? "text-green-900" : isDone ? "text-gray-600" : "text-gray-900"}`}>
+                        <p className={`font-bold text-sm sm:text-base ${isActive ? "text-black" : isDone ? "text-gray-500" : "text-black"}`}>
                           {reading.week_title}
                         </p>
                         {isDone ? (
-                          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                          <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
                         ) : (
-                          <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                          <div className="w-2 h-2 rounded-full bg-black shrink-0" />
                         )}
                       </div>
-                      <p className="text-xs text-green-700 font-bold mt-1 truncate bg-green-100/50 inline-block px-2 py-0.5 rounded">Goal: {reading.chapters}</p>
+                      <p className={`text-xs font-bold mt-1 truncate inline-block px-2 py-0.5 rounded ${isActive ? "text-green-800 bg-green-100/50" : "text-gray-600 bg-gray-100"}`}>
+                        Goal: {reading.chapters}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -281,12 +283,12 @@ export function BibleReading() {
         </Card>
 
         {/* --- MAIN INTERFACE --- */}
-        <Card className="lg:col-span-2 border-green-200 shadow-sm">
-          <CardHeader className="p-4 sm:p-6 border-b border-gray-50">
+        <Card className="lg:col-span-2 border-green-200 shadow-sm bg-white">
+          <CardHeader className="p-4 sm:p-6 border-b border-gray-100">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
-                <CardTitle className="text-green-900 text-xl sm:text-2xl">{selectedReading?.week_title}</CardTitle>
-                <CardDescription className="text-green-700 font-bold mt-1 text-base sm:text-lg">
+                <CardTitle className="text-black text-xl sm:text-2xl">{selectedReading?.week_title}</CardTitle>
+                <CardDescription className="text-gray-600 font-bold mt-1 text-base sm:text-lg">
                   {activeBook.title} — Chapter {currentChapter}
                 </CardDescription>
               </div>
@@ -306,8 +308,8 @@ export function BibleReading() {
           <CardContent className="p-4 sm:p-6 pt-4 sm:pt-6">
             <Tabs defaultValue="read" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-green-50/80 p-1 rounded-lg mb-6">
-                <TabsTrigger value="read" className="text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">Reading Phase</TabsTrigger>
-                <TabsTrigger value="lesson" className="text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
+                <TabsTrigger value="read" className="text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm font-bold">Reading Phase</TabsTrigger>
+                <TabsTrigger value="lesson" className="text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm font-bold">
                   {isParent ? "Lesson Management" : "Parent's Lesson"}
                 </TabsTrigger>
               </TabsList>
@@ -315,14 +317,14 @@ export function BibleReading() {
               <TabsContent value="read" className="space-y-6">
                 
                 {/* BEAUTIFUL READING AREA */}
-                <div className="bg-[#FAFAFA] rounded-2xl border border-gray-200 shadow-inner overflow-hidden relative">
+                <div className="bg-gray-50 rounded-2xl border border-gray-200 shadow-inner overflow-hidden relative">
                   
                   {/* Sticky Reader Toolbar */}
-                  <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 p-3 flex items-center justify-between sticky top-0 z-10">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">
+                  <div className="bg-white/90 backdrop-blur-md border-b border-gray-200 p-3 flex items-center justify-between sticky top-0 z-10">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-2">
                       {activeBook.title} {currentChapter}
                     </span>
-                    <Button variant="outline" size="sm" onClick={cycleFontSize} className="h-8 text-xs font-bold bg-white text-gray-600 border-gray-200 hover:bg-gray-50">
+                    <Button variant="outline" size="sm" onClick={cycleFontSize} className="h-8 text-xs font-bold bg-white text-gray-600 border-gray-200 hover:bg-gray-100 transition-colors">
                       <Type className="w-3.5 h-3.5 mr-2 text-gray-400" /> Size: {fontSize.charAt(0).toUpperCase() + fontSize.slice(1)}
                     </Button>
                   </div>
@@ -332,32 +334,32 @@ export function BibleReading() {
                     {isFetchingBible ? (
                       <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                         <Loader2 className="w-8 h-8 animate-spin mb-4 text-green-600" />
-                        <p className="font-medium">Loading Chapter {currentChapter}...</p>
+                        <p className="font-medium animate-pulse">Loading Chapter {currentChapter}...</p>
                       </div>
                     ) : bibleText.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-center px-4">
-                        <BookOpen className="w-12 h-12 mb-4 opacity-30 text-red-400" />
-                        <p className="font-bold text-gray-900 mb-2 text-lg">No Verses Found</p>
-                        <p className="text-sm bg-red-50 text-red-800 p-4 rounded-xl border border-red-100 max-w-sm leading-relaxed">
+                        <BookOpen className="w-12 h-12 mb-4 opacity-30 text-gray-400" />
+                        <p className="font-bold text-black mb-2 text-lg">No Verses Found</p>
+                        <p className="text-sm bg-gray-100 text-gray-600 p-4 rounded-xl max-w-sm leading-relaxed border border-gray-200">
                           {apiErrorMsg || "Make sure the Book Name is correct in Admin Controls."}
                         </p>
-                        <Button variant="outline" className="mt-6 border-gray-300" onClick={() => setCurrentChapter(1)}>Return to Chapter 1</Button>
+                        <Button variant="outline" className="mt-6 border-gray-300 hover:bg-gray-100 text-black font-bold" onClick={() => setCurrentChapter(1)}>Return to Chapter 1</Button>
                       </div>
                     ) : (
                       <div className="max-w-2xl mx-auto space-y-5">
                         {bibleText.map((verseData) => (
                           <div key={verseData.id} className="flex gap-3 sm:gap-4 md:gap-5 group">
-                            <span className="text-green-600/40 font-bold text-[10px] sm:text-xs pt-1.5 sm:pt-2 w-4 sm:w-6 text-right shrink-0 select-none group-hover:text-green-600 transition-colors">
+                            <span className="text-green-600 font-bold text-[10px] sm:text-xs pt-1.5 sm:pt-2 w-4 sm:w-6 text-right shrink-0 select-none opacity-50 group-hover:opacity-100 transition-opacity">
                               {verseData.verse_number}
                             </span>
-                            <p className={`font-serif text-gray-800 ${getTextClass()}`}>
+                            <p className={`font-serif text-black ${getTextClass()}`}>
                               {verseData.text}
                             </p>
                           </div>
                         ))}
                         
                         <div className="pt-12 pb-4 flex justify-center">
-                          <Button variant="outline" onClick={() => setCurrentChapter(c => c + 1)} className="border-green-200 text-green-700 hover:bg-green-50 rounded-full px-8">
+                          <Button variant="outline" onClick={() => setCurrentChapter(c => c + 1)} className="border-green-200 text-green-700 hover:bg-green-50 rounded-full px-8 transition-colors font-bold">
                             Continue to Chapter {currentChapter + 1} <ChevronRight className="w-4 h-4 ml-2" />
                           </Button>
                         </div>
@@ -369,23 +371,23 @@ export function BibleReading() {
                 {/* BOTTOM RECORDING & FINISH AREA */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm">
                   {!isCompleted && (
-                    <div className="mb-6 bg-blue-50/50 border border-blue-100 rounded-xl p-5 text-center">
+                    <div className="mb-6 bg-green-50/50 border border-green-100 rounded-xl p-5 text-center transition-all">
                       <div className="flex justify-center mb-4">
-                        <div className={`p-4 rounded-full transition-all duration-500 ${isMockRecording ? "bg-red-100 text-red-600 animate-pulse scale-110 shadow-lg shadow-red-200" : hasMockRecorded ? "bg-green-100 text-green-600 scale-100" : "bg-blue-100 text-blue-600 scale-100 hover:scale-105"}`}>
+                        <div className={`p-4 rounded-full transition-all duration-500 ${isMockRecording ? "bg-red-600 text-white animate-pulse scale-110 shadow-lg shadow-red-200" : hasMockRecorded ? "bg-green-100 text-green-600 scale-100" : "bg-black text-white scale-100 hover:scale-105"}`}>
                           {hasMockRecorded ? <CheckCircle className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
                         </div>
                       </div>
-                      <h4 className="font-bold text-blue-950 mb-1 text-sm sm:text-base">Read Aloud Phase</h4>
-                      <p className="text-xs sm:text-sm text-blue-800/70 mb-5 max-w-sm mx-auto leading-relaxed">Record yourself reading the chapter aloud to unlock completion.</p>
+                      <h4 className="font-bold text-black mb-1 text-sm sm:text-base">Read Aloud Phase</h4>
+                      <p className="text-xs sm:text-sm text-gray-500 mb-5 max-w-sm mx-auto leading-relaxed">Record yourself reading the chapter aloud to unlock completion.</p>
                       
                       {!isMockRecording && !hasMockRecorded && (
-                        <Button onClick={() => setIsMockRecording(true)} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-md">
+                        <Button onClick={() => setIsMockRecording(true)} className="bg-black hover:bg-gray-800 text-white w-full sm:w-auto shadow-md transition-colors">
                           <Mic className="w-4 h-4 mr-2 shrink-0" /> Start Reading Session
                         </Button>
                       )}
                       
                       {isMockRecording && (
-                        <Button onClick={() => { setIsMockRecording(false); setHasMockRecorded(true); toast.success("Great job reading!"); }} variant="destructive" className="animate-pulse w-full sm:w-auto shadow-md">
+                        <Button onClick={() => { setIsMockRecording(false); setHasMockRecorded(true); toast.success("Great job reading!"); }} className="bg-red-600 hover:bg-red-700 text-white animate-pulse w-full sm:w-auto shadow-md">
                           <span className="w-2 h-2 rounded-full bg-white mr-2 animate-ping shrink-0" /> Stop & Save Session
                         </Button>
                       )}
@@ -426,49 +428,49 @@ export function BibleReading() {
                 <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200 shadow-sm min-h-[300px]">
                   {isParent ? (
                     <div className="space-y-6">
-                      <div className="bg-blue-50/40 p-5 sm:p-6 rounded-2xl border border-blue-100 flex flex-col items-start gap-4">
-                        <div className="flex items-center justify-between w-full border-b border-blue-100/50 pb-4">
+                      <div className="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200 flex flex-col items-start gap-4">
+                        <div className="flex items-center justify-between w-full border-b border-gray-200 pb-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Mic className="w-5 h-5 shrink-0" /></div>
-                            <h4 className="font-bold text-blue-950 text-base">Voice Explanation</h4>
+                            <div className="p-2 bg-black text-white rounded-lg"><Mic className="w-5 h-5 shrink-0" /></div>
+                            <h4 className="font-bold text-black text-base">Voice Explanation</h4>
                           </div>
-                          {activeProgress?.voice_recording_url && <Badge className="bg-green-100 text-green-800 border-green-200 pointer-events-none shadow-none">Active</Badge>}
+                          {activeProgress?.voice_recording_url && <Badge className="bg-green-100 text-green-800 border-green-200 pointer-events-none shadow-none font-bold">Active</Badge>}
                         </div>
                         <div className="w-full space-y-4">
                           {activeProgress?.voice_recording_url && (
-                            <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                               <p className="text-xs text-gray-500 font-bold uppercase mb-3">Current Upload:</p>
-                              <audio controls className="w-full h-10"><source src={activeProgress.voice_recording_url} type="audio/mpeg" /></audio>
+                              <audio controls className="w-full h-10 outline-none"><source src={activeProgress.voice_recording_url} type="audio/mpeg" /></audio>
                             </div>
                           )}
                           <div className="pt-2">
-                            <p className="text-sm text-blue-800/80 mb-3 font-medium">{activeProgress?.voice_recording_url ? "Upload a new file to replace the current one:" : "Record or upload an MP3 to explain this chapter to your kids."}</p>
-                            <input type="file" accept="audio/*" capture="user" onChange={(e) => handleFileUpload(e, 'audio')} className="w-full text-sm file:mr-3 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer transition-colors bg-white rounded-full border border-blue-200" disabled={isUploading}/>
+                            <p className="text-sm text-gray-600 mb-3 font-medium">{activeProgress?.voice_recording_url ? "Upload a new file to replace the current one:" : "Record or upload an MP3 to explain this chapter to your kids."}</p>
+                            <input type="file" accept="audio/*" capture="user" onChange={(e) => handleFileUpload(e, 'audio')} className="w-full text-sm file:mr-3 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-bold file:bg-black file:text-white hover:file:bg-gray-800 file:cursor-pointer transition-colors bg-white rounded-full border border-gray-200 text-gray-500" disabled={isUploading}/>
                           </div>
                         </div>
                       </div>
 
-                      <div className="bg-amber-50/40 p-5 sm:p-6 rounded-2xl border border-amber-100 flex flex-col items-start gap-4">
-                        <div className="flex items-center justify-between w-full border-b border-amber-100/50 pb-4">
+                      <div className="bg-green-50/50 p-5 sm:p-6 rounded-2xl border border-green-100 flex flex-col items-start gap-4">
+                        <div className="flex items-center justify-between w-full border-b border-green-200/50 pb-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg"><FileText className="w-5 h-5 shrink-0" /></div>
-                            <h4 className="font-bold text-amber-950 text-base">Study Notes</h4>
+                            <div className="p-2 bg-green-100 text-green-700 rounded-lg"><FileText className="w-5 h-5 shrink-0" /></div>
+                            <h4 className="font-bold text-black text-base">Study Notes</h4>
                           </div>
-                          {activeProgress?.explanation_file_url && <Badge className="bg-green-100 text-green-800 border-green-200 pointer-events-none shadow-none">Active</Badge>}
+                          {activeProgress?.explanation_file_url && <Badge className="bg-green-100 text-green-800 border-green-200 pointer-events-none shadow-none font-bold">Active</Badge>}
                         </div>
                         <div className="w-full space-y-4">
                           {activeProgress?.explanation_file_url && (
-                            <div className="bg-white p-4 rounded-xl border border-amber-100 shadow-sm flex items-center justify-between">
+                            <div className="bg-white p-4 rounded-xl border border-green-100 shadow-sm flex items-center justify-between transition-all hover:border-green-300">
                                <div>
                                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Current Upload:</p>
-                                 <p className="text-sm font-bold text-gray-900">Document Active</p>
+                                 <p className="text-sm font-bold text-black">Document Active</p>
                                </div>
-                               <Button variant="outline" size="sm" className="border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => window.open(activeProgress.explanation_file_url, '_blank')}>View File</Button>
+                               <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50 font-bold" onClick={() => window.open(activeProgress.explanation_file_url, '_blank')}>View File</Button>
                             </div>
                           )}
                           <div className="pt-2">
-                            <p className="text-sm text-amber-800/80 mb-3 font-medium">{activeProgress?.explanation_file_url ? "Upload a new PDF/Doc to replace the current one:" : "Upload a PDF or document with your personal notes for the family."}</p>
-                            <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={(e) => handleFileUpload(e, 'document')} className="w-full text-sm file:mr-3 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-700 file:cursor-pointer transition-colors bg-white rounded-full border border-amber-200" disabled={isUploading}/>
+                            <p className="text-sm text-gray-600 mb-3 font-medium">{activeProgress?.explanation_file_url ? "Upload a new PDF/Doc to replace the current one:" : "Upload a PDF or document with your personal notes for the family."}</p>
+                            <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={(e) => handleFileUpload(e, 'document')} className="w-full text-sm file:mr-3 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700 file:cursor-pointer transition-colors bg-white rounded-full border border-green-200 text-gray-500" disabled={isUploading}/>
                           </div>
                         </div>
                       </div>
@@ -478,28 +480,28 @@ export function BibleReading() {
                       {!parentLesson?.voice_recording_url && !parentLesson?.explanation_file_url ? (
                         <div className="w-full max-w-md py-16 px-6 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 text-center flex flex-col items-center">
                           <div className="w-20 h-20 bg-white rounded-full border border-gray-100 shadow-sm flex items-center justify-center mb-5"><History className="w-10 h-10 text-gray-300" /></div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">Waiting for Lesson</h3>
+                          <h3 className="text-xl font-bold text-black mb-2">Waiting for Lesson</h3>
                           <p className="text-sm text-gray-500 max-w-xs leading-relaxed">Your parent hasn't uploaded the audio or notes for this week yet. Check back later!</p>
-                          <Button variant="outline" className="mt-8 border-gray-200 hover:bg-white" onClick={() => fetchData()}><RefreshCw className="w-4 h-4 mr-2 text-gray-500" /> Refresh Page</Button>
+                          <Button variant="outline" className="mt-8 border-gray-200 hover:bg-gray-50 text-black font-bold" onClick={() => fetchData()}><RefreshCw className="w-4 h-4 mr-2 text-gray-500" /> Refresh Page</Button>
                         </div>
                       ) : (
                         <div className="w-full max-w-md space-y-6">
-                          <h3 className="text-2xl font-black text-gray-900 text-center mb-8 pb-4 border-b border-gray-100">Resources from Parent</h3>
+                          <h3 className="text-2xl font-black text-black text-center mb-8 pb-4 border-b border-gray-100">Resources from Parent</h3>
                           {parentLesson?.voice_recording_url && (
-                            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-300 hover:shadow-md transition-all w-full overflow-hidden relative">
-                              <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
-                              <p className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2"><PlayCircle className="w-5 h-5 text-blue-500 shrink-0"/> Voice Lesson</p>
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-black hover:shadow-md transition-all w-full overflow-hidden relative group">
+                              <div className="absolute top-0 left-0 w-1.5 h-full bg-black group-hover:bg-green-500 transition-colors"></div>
+                              <p className="text-base font-bold text-black mb-4 flex items-center gap-2"><PlayCircle className="w-5 h-5 text-gray-400 group-hover:text-green-500 transition-colors shrink-0"/> Voice Lesson</p>
                               <audio controls className="w-full h-12 outline-none"><source src={parentLesson.voice_recording_url} type="audio/mpeg" />Your browser does not support the audio element.</audio>
                             </div>
                           )}
                           {parentLesson?.explanation_file_url && (
-                            <a href={parentLesson.explanation_file_url} target="_blank" rel="noopener noreferrer" className="group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-amber-300 hover:shadow-md transition-all w-full flex items-center justify-between relative block">
-                              <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500 rounded-l-2xl"></div>
+                            <a href={parentLesson.explanation_file_url} target="_blank" rel="noopener noreferrer" className="group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-green-400 hover:shadow-md transition-all w-full flex items-center justify-between relative block">
+                              <div className="absolute top-0 left-0 w-1.5 h-full bg-green-500 rounded-l-2xl"></div>
                               <div className="flex items-center gap-4">
-                                <div className="p-3 bg-amber-50 rounded-xl group-hover:bg-amber-100 transition-colors"><FileText className="w-6 h-6 text-amber-600" /></div>
-                                <div className="text-left"><p className="text-base font-bold text-gray-900">Study Notes</p><p className="text-sm text-gray-500 mt-0.5">Tap to view or download</p></div>
+                                <div className="p-3 bg-green-50 rounded-xl group-hover:bg-green-100 transition-colors"><FileText className="w-6 h-6 text-green-600" /></div>
+                                <div className="text-left"><p className="text-base font-bold text-black">Study Notes</p><p className="text-sm text-gray-500 mt-0.5">Tap to view or download</p></div>
                               </div>
-                              <Download className="w-6 h-6 text-gray-300 group-hover:text-amber-500 transition-colors shrink-0" />
+                              <Download className="w-6 h-6 text-gray-300 group-hover:text-green-600 transition-colors shrink-0" />
                             </a>
                           )}
                         </div>
