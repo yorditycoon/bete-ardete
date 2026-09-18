@@ -6,11 +6,13 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "../lib/supabase"; 
+import { ShieldCheck } from "lucide-react";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -59,15 +61,17 @@ export function LoginPage() {
         <Card className="border-green-200 shadow-xl bg-white rounded-2xl overflow-hidden">
           <CardHeader className="text-center space-y-4 pt-8">
             
-            <div className="mx-auto w-28 h-28 bg-green-50 rounded-full flex items-center justify-center p-3 overflow-hidden border border-green-200 shadow-sm">
-              <img 
-                src="/church-logo.png" 
-                alt="Bete Ardete Logo" 
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }} 
-              />
+            <div className="mx-auto w-28 h-28 bg-green-50 rounded-full flex items-center justify-center p-3 overflow-hidden border border-green-200 shadow-sm relative">
+              {!logoFailed ? (
+                <img 
+                  src="/church-logo.png" 
+                  alt="Bete Ardete Logo" 
+                  className="w-full h-full object-contain"
+                  onError={() => setLogoFailed(true)} 
+                />
+              ) : (
+                <ShieldCheck className="w-12 h-12 text-green-600" />
+              )}
             </div>
 
             <div>
@@ -116,7 +120,7 @@ export function LoginPage() {
             {/* Custom Footer Message */}
             <div className="mt-8 pt-6 border-t border-gray-100 text-center">
               <p className="text-sm text-gray-500 font-bold tracking-wide">
-                developed by በፀሎታችሁ አስቡኝ 🙏
+                በፀሎታችሁ አስቡኝ 🙏
               </p>
             </div>
           </CardContent>
