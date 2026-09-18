@@ -341,33 +341,66 @@ export function ParentDashboard() {
           </CardContent>
         </Card>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {familyMembers.map(m => (
-            <Card key={m.id} className={`p-5 relative group border-gray-200 hover:border-green-300 transition-colors shadow-sm bg-white ${m.role === 'parent' ? "ring-1 ring-green-500 bg-green-50/20" : ""}`}>
-              {m.role !== 'parent' && (
-                <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all" onClick={() => handleDeleteMember(m.id, m.name)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-              <div className="flex items-center gap-4 mb-5">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl ${m.role === 'parent' ? "bg-black text-white" : "bg-green-100 text-green-800"}`}>{m.name[0]}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2"><p className="font-bold text-base text-black truncate">{m.name}</p>{m.role === 'parent' && <Badge variant="outline" className="text-[10px] h-5 px-1.5 bg-black text-white border-none font-bold">Parent</Badge>}</div>
-                  <p className="text-xs text-gray-400 font-mono truncate">{m.email}</p>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full text-xs hover:bg-green-50 hover:text-green-700 border-green-200 font-bold" onClick={() => navigate(`/app/family-activities`)}>
-                View Family Progress
-              </Button>
-            </Card>
-          ))}
-          {familyMembers.length === 0 && (
-            <div className="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-12 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl">
-              <p className="text-gray-500 font-medium">Your household is empty.</p>
-              <p className="text-sm text-gray-400 mt-1">Click the "Add Child" button above to get started.</p>
+        {/* REPLACED INDIVIDUAL CARDS WITH A CLEAN MEMBER LIST CARD */}
+        <Card className="border-green-200 shadow-sm bg-white overflow-hidden">
+          <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
+            <CardTitle className="text-lg text-black">Family Members List</CardTitle>
+            <CardDescription>All registered members belonging to {familyName}</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="p-4 font-bold">Member Name</th>
+                    <th className="p-4 font-bold">Email Address</th>
+                    <th className="p-4 font-bold">Role</th>
+                    <th className="p-4 font-bold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {familyMembers.map(m => (
+                    <tr key={m.id} className="hover:bg-green-50/30 transition-colors">
+                      <td className="p-4 flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${m.role === 'parent' ? "bg-black text-white" : "bg-green-100 text-green-800"}`}>
+                          {m.name[0]}
+                        </div>
+                        <span className="font-bold text-black">{m.name}</span>
+                      </td>
+                      <td className="p-4 text-gray-500 font-mono text-xs">{m.email}</td>
+                      <td className="p-4">
+                        {m.role === 'parent' ? (
+                          <Badge className="bg-black text-white border-none font-bold text-[10px]">Parent</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-white text-gray-600 border-gray-200 font-bold text-[10px]">Child</Badge>
+                        )}
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50 font-bold text-xs" onClick={() => navigate(`/app/family-activities`)}>
+                            Progress
+                          </Button>
+                          {m.role !== 'parent' && (
+                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8" onClick={() => handleDeleteMember(m.id, m.name)} title="Remove Member">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {familyMembers.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="text-center py-12 text-gray-400 italic">
+                        Your household is empty. Click "Add Child" above to get started.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -403,16 +436,14 @@ export function ParentDashboard() {
 
       {departmentName ? (
         <Tabs defaultValue="family" className="w-full">
-  <TabsList className="grid w-full grid-cols-2 bg-green-50 p-1.5 rounded-xl mb-6 border border-green-100 h-auto">
-    <TabsTrigger value="family" className="font-bold text-xs sm:text-sm md:text-base px-2 py-3 text-center truncate data-[state=active]:bg-white data-[state=active]:text-black shadow-sm">
-      Family & Personal
-    </TabsTrigger>
-    <TabsTrigger value="department" className="font-bold text-xs sm:text-sm md:text-base px-2 py-3 text-center truncate data-[state=active]:bg-black data-[state=active]:text-white shadow-sm">
-      Department Workspace
-    </TabsTrigger>
-  </TabsList>
-  
-  {/* Content tabs remain here... */}
+          <TabsList className="grid w-full grid-cols-2 bg-green-50 p-1.5 rounded-xl mb-6 border border-green-100 h-auto">
+            <TabsTrigger value="family" className="font-bold text-xs sm:text-sm md:text-base px-2 py-3 text-center truncate data-[state=active]:bg-white data-[state=active]:text-black shadow-sm">
+              Family & Personal
+            </TabsTrigger>
+            <TabsTrigger value="department" className="font-bold text-xs sm:text-sm md:text-base px-2 py-3 text-center truncate data-[state=active]:bg-black data-[state=active]:text-white shadow-sm">
+              Department Workspace
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="family" className="space-y-6">
             {familyDashboardContent}
