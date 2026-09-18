@@ -172,78 +172,82 @@ export function AttendancePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* LEFT SIDE: CALENDAR */}
-        <Card className="lg:col-span-1 border-green-200 shadow-sm bg-white w-full">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
-            <CardTitle className="text-lg text-black">Gathering Date</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center p-4 overflow-x-auto">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              className="rounded-md border border-green-200 max-w-full"
-            />
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-1 w-full flex justify-center">
+          <Card className="border-green-200 shadow-sm bg-white w-full max-w-md lg:max-w-none">
+            <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
+              <CardTitle className="text-lg text-black">Gathering Date</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-center p-4 overflow-x-auto">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                className="rounded-md border border-green-200 max-w-full pointer-events-auto"
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* RIGHT SIDE: MEMBER LIST */}
-        <Card className="lg:col-span-2 border-green-200 shadow-sm bg-white flex flex-col h-[550px] sm:h-[600px] w-full">
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-4 flex-none">
-            <div>
-              <CardTitle className="text-xl text-black">Mark Attendance</CardTitle>
-              <CardDescription className="text-green-700 font-medium mt-1">
-                {format(selectedDate, 'PPPP')}
-              </CardDescription>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button variant="outline" size="sm" onClick={handleMarkAllPresent} className="flex-1 sm:flex-none border-green-200 text-green-700 hover:bg-green-50 font-bold transition-colors">
-                All Present
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setAttendance({})} className="flex-1 sm:flex-none border-gray-200 text-gray-600 hover:bg-gray-50 font-bold transition-colors">
-                Clear
-              </Button>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 sm:pr-2">
-              {members.length === 0 ? (
-                <p className="text-center text-gray-500 py-12 italic">No members found to track.</p>
-              ) : (
-                members.map((member) => (
-                  <div key={member.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border transition-colors bg-white shadow-sm gap-3 ${attendance[member.id] ? "border-green-400" : "border-gray-100 hover:border-green-200"}`}>
-                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                      <Checkbox 
-                        id={member.id} 
-                        checked={!!attendance[member.id]} 
-                        onCheckedChange={() => handleToggleAttendance(member.id)}
-                        className="w-5 h-5 text-green-600 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 shrink-0"
-                      />
-                      <Label htmlFor={member.id} className="cursor-pointer min-w-0 flex-1">
-                        <p className="font-bold text-black text-sm sm:text-base truncate">{member.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5 truncate">{member.email || "No email"}</p>
-                      </Label>
-                    </div>
-                    <Badge variant="outline" className={attendance[member.id] ? "bg-green-100 text-green-800 border-green-300 px-3 py-1 font-bold w-fit self-start sm:self-auto shrink-0" : "bg-gray-50 text-gray-500 border-gray-200 px-3 py-1 font-medium w-fit self-start sm:self-auto shrink-0"}>
-                      {attendance[member.id] ? "Present" : "Absent"}
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </div>
+        <div className="lg:col-span-2 w-full">
+          <Card className="border-green-200 shadow-sm bg-white flex flex-col h-[550px] sm:h-[600px] w-full">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-4 flex-none">
+              <div>
+                <CardTitle className="text-xl text-black">Mark Attendance</CardTitle>
+                <CardDescription className="text-green-700 font-medium mt-1">
+                  {format(selectedDate, 'PPPP')}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" onClick={handleMarkAllPresent} className="flex-1 sm:flex-none border-green-200 text-green-700 hover:bg-green-50 font-bold transition-colors">
+                  All Present
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setAttendance({})} className="flex-1 sm:flex-none border-gray-200 text-gray-600 hover:bg-gray-50 font-bold transition-colors">
+                  Clear
+                </Button>
+              </div>
+            </CardHeader>
             
-            <div className="mt-4 pt-4 border-t border-gray-100 flex-none">
-              <Button 
-                onClick={handleSaveAttendance} 
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-5 sm:py-6 text-base sm:text-lg transition-all" 
-                disabled={isSaving || members.length === 0}
-              >
-                {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />} 
-                Save Attendance Record
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1 sm:pr-2">
+                {members.length === 0 ? (
+                  <p className="text-center text-gray-500 py-12 italic">No members found to track.</p>
+                ) : (
+                  members.map((member) => (
+                    <div key={member.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border transition-colors bg-white shadow-sm gap-3 ${attendance[member.id] ? "border-green-400" : "border-gray-100 hover:border-green-200"}`}>
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <Checkbox 
+                          id={member.id} 
+                          checked={!!attendance[member.id]} 
+                          onCheckedChange={() => handleToggleAttendance(member.id)}
+                          className="w-5 h-5 text-green-600 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 shrink-0"
+                        />
+                        <Label htmlFor={member.id} className="cursor-pointer min-w-0 flex-1">
+                          <p className="font-bold text-black text-sm sm:text-base truncate">{member.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5 truncate">{member.email || "No email"}</p>
+                        </Label>
+                      </div>
+                      <Badge variant="outline" className={attendance[member.id] ? "bg-green-100 text-green-800 border-green-300 px-3 py-1 font-bold w-fit self-start sm:self-auto shrink-0" : "bg-gray-50 text-gray-500 border-gray-200 px-3 py-1 font-medium w-fit self-start sm:self-auto shrink-0"}>
+                        {attendance[member.id] ? "Present" : "Absent"}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-gray-100 flex-none">
+                <Button 
+                  onClick={handleSaveAttendance} 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-5 sm:py-6 text-base sm:text-lg transition-all" 
+                  disabled={isSaving || members.length === 0}
+                >
+                  {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />} 
+                  Save Attendance Record
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
       </div>
     </div>
