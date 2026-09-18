@@ -19,7 +19,6 @@ import { DepartmentTaskBoard } from "./department-task-board";
 
 // --- MAP IMPORTS ---
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.fcss';
 import L from 'leaflet';
 
 const customMapPin = new L.DivIcon({

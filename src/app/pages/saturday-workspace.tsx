@@ -22,7 +22,6 @@ import { DepartmentTaskBoard } from "./department-task-board";
 
 // --- MAP IMPORTS ---
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
 // Create a custom GREEN map pin to match the system theme
