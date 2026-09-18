@@ -18,7 +18,7 @@ import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { format } from "date-fns";
-import { DepartmentTaskBoard } from "./department-task-board"; // <-- TASK BOARD IMPORTED
+import { DepartmentTaskBoard } from "./department-task-board"; 
 
 // --- MAP IMPORTS ---
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
@@ -48,9 +48,11 @@ interface AgendaItem { time: string; activity: string; }
 
 export function SaturdayWorkspace() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // --- SPLIT LOADING STATES ---
+  const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(true);
+  const [isDateLoading, setIsDateLoading] = useState(false);
 
   // --- ATTENDANCE STATES ---
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -67,11 +69,14 @@ export function SaturdayWorkspace() {
   const [eventImage, setEventImage] = useState<File | null>(null); 
   const [mapSearchQuery, setMapSearchQuery] = useState("");
   const [isSearchingMap, setIsSearchingMap] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
+  // 1. INITIALIZE WORKSPACE (User, Members, Dept, Events) - Runs ONCE
   useEffect(() => {
     let channel: any;
 
     const initializeWorkspace = async () => {
+      setIsWorkspaceLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return navigate("/");
@@ -84,6 +89,14 @@ export function SaturdayWorkspace() {
           return navigate("/app");
         }
 
+        // Fetch Department
+        const { data: satDept } = await supabase.from('departments').select('*').ilike('name_en', '%Saturday%').single();
+        if (satDept) setSaturdayServiceDept(satDept);
+
+        // Fetch Members
+        const { data: membersData } = await supabase.from('profiles').select('id, name, email, role').neq('role', 'admin').order('name', { ascending: true });
+        setMembers(membersData || []);
+
         // Load Events
         fetchEvents();
         
@@ -93,6 +106,8 @@ export function SaturdayWorkspace() {
 
       } catch (error) {
         console.error(error);
+      } finally {
+        setIsWorkspaceLoading(false);
       }
     };
 
@@ -100,39 +115,34 @@ export function SaturdayWorkspace() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [navigate]);
 
-  // Load Events Data
+  // Load Events Helper
   const fetchEvents = async () => {
     const { data: eventsData } = await supabase.from('events').select('*').order('event_date', { ascending: true });
     if (eventsData) setEvents(eventsData);
   };
 
-  // Load Attendance Data
+  // 2. LOAD ATTENDANCE DATA - Runs when Date changes
   useEffect(() => {
     const loadAttendanceData = async () => {
-      setIsLoading(true);
+      if (!saturdayServiceDept) return;
+      
+      setIsDateLoading(true);
       try {
-        const { data: satDept } = await supabase.from('departments').select('*').ilike('name_en', '%Saturday%').single();
-        if (satDept) setSaturdayServiceDept(satDept);
-
-        const { data: membersData } = await supabase.from('profiles').select('id, name, email, role').neq('role', 'admin').order('name', { ascending: true });
-        setMembers(membersData || []);
-
-        if (satDept) {
-          const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-          const { data: attendanceData } = await supabase.from('attendance').select('user_id, present').eq('department_id', satDept.id).eq('attendance_date', formattedDate);
-          const attendanceMap: Record<string, boolean> = {};
-          attendanceData?.forEach(record => { attendanceMap[record.user_id] = record.present; });
-          setAttendance(attendanceMap);
-        }
+        const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+        const { data: attendanceData } = await supabase.from('attendance').select('user_id, present').eq('department_id', saturdayServiceDept.id).eq('attendance_date', formattedDate);
+        
+        const attendanceMap: Record<string, boolean> = {};
+        attendanceData?.forEach(record => { attendanceMap[record.user_id] = record.present; });
+        setAttendance(attendanceMap);
       } catch (error: any) {
         toast.error("Error loading attendance: " + error.message);
       } finally {
-        setIsLoading(false);
+        setIsDateLoading(false);
       }
     };
 
-    if (currentUser) loadAttendanceData();
-  }, [selectedDate, currentUser]);
+    loadAttendanceData();
+  }, [selectedDate, saturdayServiceDept]);
 
   // --- ATTENDANCE HANDLERS ---
   const handleToggleAttendance = (userId: string) => setAttendance(prev => ({ ...prev, [userId]: !prev[userId] }));
@@ -224,7 +234,7 @@ export function SaturdayWorkspace() {
   const attendanceRate = members.length > 0 ? Math.round((presentCount / members.length) * 100) : 0;
   const isSaturdayHead = currentUser?.role === 'admin' || currentUser?.department_role === 'head' || currentUser?.department_role === 'deputy';
 
-  if (isLoading) return <div className="flex flex-col items-center justify-center h-[30vh]"><Loader2 className="w-8 h-8 animate-spin text-green-600 mb-4" /><p className="text-gray-500 font-medium">Loading Saturday Console...</p></div>;
+  if (isWorkspaceLoading) return <div className="flex flex-col items-center justify-center h-[30vh]"><Loader2 className="w-8 h-8 animate-spin text-green-600 mb-4" /><p className="text-gray-500 font-medium">Loading Saturday Console...</p></div>;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -294,51 +304,93 @@ export function SaturdayWorkspace() {
               <p className="text-sm text-gray-400">The "Saturday Service" department is missing from the database.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-1 border-green-200 shadow-sm bg-white h-fit sticky top-24">
-                <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4"><CardTitle className="text-lg text-black">Gathering Date</CardTitle></CardHeader>
-                <CardContent className="flex justify-center p-4">
-                  <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} className="rounded-md border border-green-200" />
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* LEFT COLUMN: THE CALENDAR */}
+              <div className="lg:col-span-4 w-full">
+                <Card className="border-green-200 shadow-sm bg-white w-full">
+                  <CardHeader className="bg-gray-50/50 border-b border-gray-100 p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg text-black flex items-center gap-2">
+                      <CalendarIcon className="w-5 h-5 text-green-600" /> Gathering Date
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-6 flex justify-center bg-white overflow-x-auto">
+                    <Calendar 
+                      mode="single" 
+                      selected={selectedDate} 
+                      onSelect={(date) => date && setSelectedDate(date)} 
+                      className="rounded-xl border border-green-100 shadow-sm p-3 bg-white" 
+                    />
+                  </CardContent>
+                </Card>
+              </div>
 
-              <Card className="lg:col-span-2 border-green-200 shadow-sm bg-white">
-                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-4">
-                  <div>
-                    <CardTitle className="text-xl text-black">Mark Attendance</CardTitle>
-                    <CardDescription className="text-green-700 font-medium mt-1">{format(selectedDate, 'PPPP')}</CardDescription>
-                  </div>
-                  <div className="flex gap-2 w-full sm:w-auto">
-                    <Button variant="outline" size="sm" onClick={handleMarkAllPresent} className="flex-1 sm:flex-none border-green-200 text-green-700 hover:bg-green-50">All Present</Button>
-                    <Button variant="outline" size="sm" onClick={() => setAttendance({})} className="flex-1 sm:flex-none">Clear</Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6 flex flex-col h-[500px]">
-                  <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                    {members.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">No members found to track.</p>
-                    ) : (
-                      members.map((member) => (
-                        <div key={member.id} className={`flex items-center justify-between p-3 rounded-xl border transition-colors bg-white ${attendance[member.id] ? "border-green-300 shadow-sm" : "border-gray-100"}`}>
-                          <div className="flex items-center gap-4">
-                            <Checkbox id={member.id} checked={!!attendance[member.id]} onCheckedChange={() => handleToggleAttendance(member.id)} className="w-5 h-5 text-green-600 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
-                            <Label htmlFor={member.id} className="cursor-pointer">
-                              <p className="font-bold text-black text-base">{member.name}</p>
-                              <p className="text-xs text-gray-400 mt-0.5">{member.email || "No email"}</p>
-                            </Label>
-                          </div>
-                          <Badge variant="outline" className={attendance[member.id] ? "bg-green-100 text-green-800 border-green-300 px-3 py-1" : "bg-gray-50 text-gray-400 px-3 py-1"}>{attendance[member.id] ? "Present" : "Absent"}</Badge>
-                        </div>
-                      ))
+              {/* RIGHT COLUMN: THE MEMBER LIST */}
+              <div className="lg:col-span-8 w-full">
+                <Card className="border-green-200 shadow-sm bg-white flex flex-col w-full h-[600px] lg:h-[700px]">
+                  <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 p-4 sm:p-6 gap-4 flex-none bg-gray-50/50">
+                    <div>
+                      <CardTitle className="text-lg sm:text-xl text-black">Mark Attendance</CardTitle>
+                      <CardDescription className="text-green-700 font-bold mt-1 text-sm">
+                        {format(selectedDate, 'EEEE, MMMM do, yyyy')}
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button variant="outline" size="sm" onClick={handleMarkAllPresent} disabled={isDateLoading} className="flex-1 sm:flex-none border-green-200 text-green-700 hover:bg-green-50 font-bold">
+                        All Present
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setAttendance({})} disabled={isDateLoading} className="flex-1 sm:flex-none border-gray-200 text-gray-600 hover:bg-gray-50 font-bold">
+                        Clear
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="p-4 sm:p-6 flex-1 flex flex-col min-h-0 relative">
+                    
+                    {/* Subtle Loading Overlay when switching dates */}
+                    {isDateLoading && (
+                      <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center rounded-b-xl">
+                        <Loader2 className="w-8 h-8 animate-spin text-green-600 mb-2" />
+                        <p className="text-green-700 font-bold text-sm">Loading registers...</p>
+                      </div>
                     )}
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex-none">
-                    <Button onClick={handleSaveAttendance} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-6 text-lg" disabled={isSaving || members.length === 0}>
-                      {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />} Save Attendance Record
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+
+                    {/* Scrollable list area */}
+                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                      {members.length === 0 ? (
+                        <p className="text-center text-gray-500 py-12 italic text-sm sm:text-base">No members found.</p>
+                      ) : (
+                        members.map((member) => (
+                          <div key={member.id} className={`flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-colors bg-white shadow-sm gap-3 ${attendance[member.id] ? "border-green-500 bg-green-50/30" : "border-gray-200 hover:border-green-300"}`}>
+                            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                              <Checkbox 
+                                id={member.id} 
+                                checked={!!attendance[member.id]} 
+                                onCheckedChange={() => handleToggleAttendance(member.id)} 
+                                className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 shrink-0" 
+                              />
+                              <Label htmlFor={member.id} className="cursor-pointer min-w-0 flex-1">
+                                <p className="font-bold text-black text-sm sm:text-base truncate">{member.name}</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">{member.email || "No email"}</p>
+                              </Label>
+                            </div>
+                            <Badge variant="outline" className={attendance[member.id] ? "bg-green-100 text-green-800 border-green-300 text-[10px] sm:text-xs px-2 py-1 font-bold shrink-0 uppercase tracking-wider" : "bg-gray-50 text-gray-500 border-gray-200 text-[10px] sm:text-xs px-2 py-1 font-medium shrink-0 uppercase tracking-wider"}>
+                              {attendance[member.id] ? "Present" : "Absent"}
+                            </Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex-none">
+                      <Button onClick={handleSaveAttendance} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-6 text-base sm:text-lg transition-all rounded-xl" disabled={isSaving || members.length === 0 || isDateLoading}>
+                        {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />} Save Attendance Record
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
             </div>
           )}
         </TabsContent>

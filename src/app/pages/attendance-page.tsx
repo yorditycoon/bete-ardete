@@ -5,7 +5,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Label } from "../components/ui/label";
 import { Badge } from "../components/ui/badge";
 import { Calendar } from "../components/ui/calendar";
-import { UserCheck, Users, TrendingUp, Loader2, Save, AlertCircle } from "lucide-react";
+import { UserCheck, Users, TrendingUp, Loader2, Save, AlertCircle, CalendarDays } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -14,19 +14,18 @@ export function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [members, setMembers] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<Record<string, boolean>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // Split loading states so the calendar doesn't unmount when changing dates!
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isDateLoading, setIsDateLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Saturday Service Department
   const [saturdayServiceDept, setSaturdayServiceDept] = useState<any>(null);
 
-  // 1. Fetch Members & Attendance for selected date
+  // 1. Initial Load: Fetch Department & Members ONLY ONCE
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      
+    const loadInitialData = async () => {
       try {
-        // Find the Saturday Service department
         const { data: satDept, error: deptError } = await supabase
           .from('departments')
           .select('*')
@@ -34,13 +33,12 @@ export function AttendancePage() {
           .single();
 
         if (deptError || !satDept) {
-          toast.error("Could not find the Saturday Service department.");
-          setIsLoading(false);
-          return;
+          setIsPageLoading(false);
+          return; // Shows the error screen below
         }
+        
         setSaturdayServiceDept(satDept);
 
-        // Fetch all members (excluding super admins if needed)
         const { data: membersData } = await supabase
           .from('profiles')
           .select('id, name, email, role')
@@ -48,13 +46,28 @@ export function AttendancePage() {
           .order('name', { ascending: true });
 
         setMembers(membersData || []);
+      } catch (error: any) {
+        toast.error("Error loading data: " + error.message);
+      } finally {
+        setIsPageLoading(false);
+      }
+    };
 
-        // Fetch existing attendance for this date & department
+    loadInitialData();
+  }, []);
+
+  // 2. Date Change: Fetch Attendance ONLY when the date changes
+  useEffect(() => {
+    const loadAttendanceForDate = async () => {
+      if (!saturdayServiceDept) return;
+      
+      setIsDateLoading(true); // Only show subtle list loader
+      try {
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         const { data: attendanceData } = await supabase
           .from('attendance')
           .select('user_id, present')
-          .eq('department_id', satDept.id)
+          .eq('department_id', saturdayServiceDept.id)
           .eq('attendance_date', formattedDate);
 
         const attendanceMap: Record<string, boolean> = {};
@@ -64,14 +77,14 @@ export function AttendancePage() {
 
         setAttendance(attendanceMap);
       } catch (error: any) {
-        toast.error("Error loading data: " + error.message);
+        toast.error("Error loading attendance: " + error.message);
       } finally {
-        setIsLoading(false);
+        setIsDateLoading(false);
       }
     };
 
-    loadData();
-  }, [selectedDate]);
+    loadAttendanceForDate();
+  }, [selectedDate, saturdayServiceDept]);
 
   const handleToggleAttendance = (userId: string) => {
     setAttendance(prev => ({
@@ -86,7 +99,7 @@ export function AttendancePage() {
     setAttendance(allPresent);
   };
 
-  // 2. Save Attendance to Supabase
+  // 3. Save Attendance to Supabase
   const handleSaveAttendance = async () => {
     if (!saturdayServiceDept) return;
     setIsSaving(true);
@@ -115,11 +128,11 @@ export function AttendancePage() {
   const presentCount = Object.values(attendance).filter(Boolean).length;
   const attendanceRate = members.length > 0 ? Math.round((presentCount / members.length) * 100) : 0;
 
-  if (isLoading) {
+  if (isPageLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh]">
         <Loader2 className="w-10 h-10 animate-spin text-green-600 mb-4" />
-        <p className="text-gray-500 font-medium animate-pulse">Loading attendance records...</p>
+        <p className="text-gray-500 font-medium animate-pulse">Initializing Workspace...</p>
       </div>
     );
   }
@@ -135,99 +148,110 @@ export function AttendancePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 animate-in fade-in duration-500 px-4 sm:px-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
       
-      {/* HEADER */}
-      <div className="bg-white rounded-xl p-6 sm:p-8 border border-green-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-black flex items-center gap-2">
-            <UserCheck className="w-8 h-8 text-green-600 shrink-0" /> Saturday Service Attendance
-          </h2>
-          <p className="text-gray-600 font-medium mt-1">Tracking faithful attendance for the whole congregation.</p>
-        </div>
+      {/* HEADER PAGE TITLE */}
+      <div className="bg-white rounded-xl p-6 sm:p-8 border border-green-200 flex flex-col justify-center items-start shadow-sm">
+        <h2 className="text-2xl sm:text-3xl font-black text-black flex items-center gap-3">
+          <UserCheck className="w-8 h-8 text-green-600" /> Saturday Service
+        </h2>
+        <p className="text-gray-600 font-medium text-sm sm:text-base mt-2">Track faithful attendance for the whole congregation.</p>
       </div>
 
-      {/* STATS ROW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="border-green-200 shadow-sm bg-white hover:border-green-400 transition-colors">
-          <CardContent className="pt-6 flex items-center justify-between">
+      {/* QUICK STATS */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="border-green-200 shadow-sm bg-white">
+          <CardContent className="p-4 sm:p-6 flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Members Registered</p>
-              <p className="text-3xl sm:text-4xl font-black text-black mt-1">{members.length}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider">Registered</p>
+              <p className="text-2xl sm:text-4xl font-black text-black mt-1">{members.length}</p>
             </div>
-            <Users className="w-10 h-10 sm:w-12 sm:h-12 text-green-100" />
+            <Users className="w-8 h-8 sm:w-12 sm:h-12 text-green-100" />
           </CardContent>
         </Card>
-        <Card className="border-green-200 shadow-sm bg-white hover:border-green-400 transition-colors">
-          <CardContent className="pt-6 flex items-center justify-between">
+        <Card className="border-green-200 shadow-sm bg-white">
+          <CardContent className="p-4 sm:p-6 flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Attendance Rate</p>
-              <p className="text-3xl sm:text-4xl font-black text-green-600 mt-1">{attendanceRate}%</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider">Attend Rate</p>
+              <p className="text-2xl sm:text-4xl font-black text-green-600 mt-1">{attendanceRate}%</p>
             </div>
-            <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-green-100" />
+            <TrendingUp className="w-8 h-8 sm:w-12 sm:h-12 text-green-100" />
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {/* MAIN LAYOUT */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* LEFT SIDE: CALENDAR */}
-        <div className="lg:col-span-1 w-full flex justify-center">
-          <Card className="border-green-200 shadow-sm bg-white w-full max-w-md lg:max-w-none">
-            <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
-              <CardTitle className="text-lg text-black">Gathering Date</CardTitle>
+        {/* LEFT COLUMN: THE CALENDAR */}
+        <div className="lg:col-span-4 w-full">
+          <Card className="border-green-200 shadow-sm bg-white w-full">
+            <CardHeader className="bg-gray-50/50 border-b border-gray-100 p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg text-black flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-green-600" /> Gathering Date
+              </CardTitle>
             </CardHeader>
-            <CardContent className="flex justify-center p-4 overflow-x-auto">
+            <CardContent className="p-4 sm:p-6 flex justify-center bg-white overflow-x-auto">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
-                className="rounded-md border border-green-200 max-w-full pointer-events-auto"
+                className="rounded-xl border border-green-100 shadow-sm p-3 bg-white"
               />
             </CardContent>
           </Card>
         </div>
 
-        {/* RIGHT SIDE: MEMBER LIST */}
-        <div className="lg:col-span-2 w-full">
-          <Card className="border-green-200 shadow-sm bg-white flex flex-col h-[550px] sm:h-[600px] w-full">
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-4 flex-none">
+        {/* RIGHT COLUMN: THE MEMBER LIST */}
+        <div className="lg:col-span-8 w-full">
+          <Card className="border-green-200 shadow-sm bg-white flex flex-col w-full h-[600px] lg:h-[700px]">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 p-4 sm:p-6 gap-4 flex-none bg-gray-50/50">
               <div>
-                <CardTitle className="text-xl text-black">Mark Attendance</CardTitle>
-                <CardDescription className="text-green-700 font-medium mt-1">
-                  {format(selectedDate, 'PPPP')}
+                <CardTitle className="text-lg sm:text-xl text-black">Mark Attendance</CardTitle>
+                <CardDescription className="text-green-700 font-bold mt-1 text-sm">
+                  {format(selectedDate, 'EEEE, MMMM do, yyyy')}
                 </CardDescription>
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
-                <Button variant="outline" size="sm" onClick={handleMarkAllPresent} className="flex-1 sm:flex-none border-green-200 text-green-700 hover:bg-green-50 font-bold transition-colors">
+                <Button variant="outline" size="sm" onClick={handleMarkAllPresent} disabled={isDateLoading} className="flex-1 sm:flex-none border-green-200 text-green-700 hover:bg-green-50 font-bold">
                   All Present
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setAttendance({})} className="flex-1 sm:flex-none border-gray-200 text-gray-600 hover:bg-gray-50 font-bold transition-colors">
+                <Button variant="outline" size="sm" onClick={() => setAttendance({})} disabled={isDateLoading} className="flex-1 sm:flex-none border-gray-200 text-gray-600 hover:bg-gray-50 font-bold">
                   Clear
                 </Button>
               </div>
             </CardHeader>
             
-            <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1 sm:pr-2">
+            <CardContent className="p-4 sm:p-6 flex-1 flex flex-col min-h-0 relative">
+              
+              {/* Subtle Loading Overlay when switching dates */}
+              {isDateLoading && (
+                <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center rounded-b-xl">
+                  <Loader2 className="w-8 h-8 animate-spin text-green-600 mb-2" />
+                  <p className="text-green-700 font-bold text-sm">Loading registers...</p>
+                </div>
+              )}
+
+              {/* Scrollable list area */}
+              <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                 {members.length === 0 ? (
-                  <p className="text-center text-gray-500 py-12 italic">No members found to track.</p>
+                  <p className="text-center text-gray-500 py-12 italic text-sm sm:text-base">No members found.</p>
                 ) : (
                   members.map((member) => (
-                    <div key={member.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border transition-colors bg-white shadow-sm gap-3 ${attendance[member.id] ? "border-green-400" : "border-gray-100 hover:border-green-200"}`}>
-                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div key={member.id} className={`flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-colors bg-white shadow-sm gap-3 ${attendance[member.id] ? "border-green-500 bg-green-50/30" : "border-gray-200 hover:border-green-300"}`}>
+                      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                         <Checkbox 
                           id={member.id} 
                           checked={!!attendance[member.id]} 
                           onCheckedChange={() => handleToggleAttendance(member.id)}
-                          className="w-5 h-5 text-green-600 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 shrink-0"
+                          className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 shrink-0"
                         />
                         <Label htmlFor={member.id} className="cursor-pointer min-w-0 flex-1">
                           <p className="font-bold text-black text-sm sm:text-base truncate">{member.name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5 truncate">{member.email || "No email"}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">{member.email || "No email"}</p>
                         </Label>
                       </div>
-                      <Badge variant="outline" className={attendance[member.id] ? "bg-green-100 text-green-800 border-green-300 px-3 py-1 font-bold w-fit self-start sm:self-auto shrink-0" : "bg-gray-50 text-gray-500 border-gray-200 px-3 py-1 font-medium w-fit self-start sm:self-auto shrink-0"}>
+                      <Badge variant="outline" className={attendance[member.id] ? "bg-green-100 text-green-800 border-green-300 text-[10px] sm:text-xs px-2 py-1 font-bold shrink-0 uppercase tracking-wider" : "bg-gray-50 text-gray-500 border-gray-200 text-[10px] sm:text-xs px-2 py-1 font-medium shrink-0 uppercase tracking-wider"}>
                         {attendance[member.id] ? "Present" : "Absent"}
                       </Badge>
                     </div>
@@ -235,11 +259,12 @@ export function AttendancePage() {
                 )}
               </div>
               
+              {/* Static Save Button Area */}
               <div className="mt-4 pt-4 border-t border-gray-100 flex-none">
                 <Button 
                   onClick={handleSaveAttendance} 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-5 sm:py-6 text-base sm:text-lg transition-all" 
-                  disabled={isSaving || members.length === 0}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-6 text-base sm:text-lg transition-all rounded-xl" 
+                  disabled={isSaving || members.length === 0 || isDateLoading}
                 >
                   {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />} 
                   Save Attendance Record
