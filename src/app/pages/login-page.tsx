@@ -116,7 +116,7 @@ export function LoginPage() {
             {/* Custom Footer Message */}
             <div className="mt-8 pt-6 border-t border-gray-100 text-center">
               <p className="text-sm text-gray-500 font-bold tracking-wide">
-                deveoped by በፀሎታችሁ አስቡኝ 🙏
+                developed by በፀሎታችሁ አስቡኝ 🙏
               </p>
             </div>
           </CardContent>

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Bell, Check, BookOpen, Calendar, ListTodo, HelpCircle, Trash2 } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "../components/ui/sheet";
 import { supabase } from "../lib/supabase";
 import { formatDistanceToNow } from "date-fns";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "../components/ui/sheet";
 
 export function NotificationBell({ userId }: { userId: string }) {
   const [notifications, setNotifications] = useState<any[]>([]);
