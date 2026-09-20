@@ -7,7 +7,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { 
   User, Users, Phone, Calendar, MapPin, 
-  Droplet, AlertCircle, Save, Loader2 
+  Droplet, AlertCircle, Save, Loader2, GraduationCap 
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
@@ -24,7 +24,8 @@ export function ProfileSettings() {
     gender: "",
     address: "",
     baptism_name: "", 
-    emergency_contact_name: ""
+    emergency_contact_name: "",
+    university: "" // <-- ADDED UNIVERSITY STATE
   });
 
   useEffect(() => {
@@ -55,7 +56,8 @@ export function ProfileSettings() {
           gender: data.gender || "",
           address: data.address || "",
           baptism_name: data.baptism_name || "", 
-          emergency_contact_name: data.emergency_contact_name || ""
+          emergency_contact_name: data.emergency_contact_name || "",
+          university: data.university || "" // <-- LOAD UNIVERSITY
         });
       }
     } catch (error: any) {
@@ -79,7 +81,8 @@ export function ProfileSettings() {
           gender: formData.gender,
           address: formData.address,
           baptism_name: formData.baptism_name, 
-          emergency_contact_name: formData.emergency_contact_name
+          emergency_contact_name: formData.emergency_contact_name,
+          university: formData.university // <-- SAVE UNIVERSITY
         })
         .eq("id", userId);
 
@@ -182,6 +185,19 @@ export function ProfileSettings() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* University / Institution */}
+          <div className="space-y-2 border-t border-gray-100 pt-4 sm:pt-6">
+            <Label className="text-gray-700 font-bold flex items-center gap-2 text-xs sm:text-sm">
+              <GraduationCap className="w-4 h-4 text-green-600 shrink-0" /> University / Institution
+            </Label>
+            <Input 
+              placeholder="e.g. American University in Dubai"
+              value={formData.university} 
+              onChange={(e) => setFormData({ ...formData, university: e.target.value })} 
+              className="focus-visible:ring-green-600 h-10 sm:h-11 text-sm sm:text-base"
+            />
           </div>
 
           {/* Address (Full Width) */}
