@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { CheckCircle, /* your other icons */ } from "lucide-react";
 import { 
   HeartHandshake, Plus, Trash2, Loader2, 
   Users, FolderTree, Search, Shield, ChevronDown, ChevronUp, 
