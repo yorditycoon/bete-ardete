@@ -134,8 +134,9 @@ export function EducationWorkspace() {
     setIsLoading(false);
   };
 
-  // Admin Handlers
-  const handleAddBook = async () => {
+  // Admin Handlers - With explicit e.preventDefault()
+  const handleAddBook = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!newBookTitle.trim()) return toast.error("Book title is required");
     const { error } = await supabase.from('study_books').insert([{ title: newBookTitle.trim() }]);
     if (error) return toast.error(error.message);
@@ -143,7 +144,8 @@ export function EducationWorkspace() {
     setNewBookTitle(""); setShowBookSuggestions(false); fetchData();
   };
 
-  const handleAddReading = async () => {
+  const handleAddReading = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!readingBookId || !newReading.week || !newReading.chapters) return toast.error("Fill all fields and select a Book");
     const { error } = await supabase.from('assignments').insert([{ book_id: readingBookId, week_title: newReading.week, chapters: newReading.chapters }]);
     if (error) return toast.error(error.message);
@@ -151,7 +153,8 @@ export function EducationWorkspace() {
     setNewReading({ week: "", chapters: "" }); fetchData();
   };
 
-  const handleSaveQuiz = async () => {
+  const handleSaveQuiz = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!quizTitle || !quizBookId) return toast.error("Title and Book are required");
     if (quizType === 'weekly' && !selectedAssignment) return toast.error("Weekly quizzes must be linked to a reading assignment");
     try {
@@ -165,7 +168,8 @@ export function EducationWorkspace() {
     } catch (error: any) { toast.error(error.message); }
   };
 
-  const handleSearchLocation = async () => {
+  const handleSearchLocation = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!mapSearchQuery.trim()) return;
     setIsSearchingMap(true);
     try {
@@ -179,7 +183,8 @@ export function EducationWorkspace() {
     } catch (error) { toast.error("Error searching for location."); } finally { setIsSearchingMap(false); }
   };
 
-  const handleAddEvent = async () => {
+  const handleAddEvent = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!newEvent.title || !newEvent.date || !newEvent.time) return toast.error("Fill all required fields");
     setIsUploading(true);
     try {
@@ -202,7 +207,8 @@ export function EducationWorkspace() {
     } catch (error: any) { toast.error(error.message); } finally { setIsUploading(false); }
   };
 
-  const handleDelete = async (table: string, id: string) => {
+  const handleDelete = async (table: string, id: string, e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if(!confirm("Are you sure? This will delete all connected records and cannot be undone.")) return;
     try {
       if (table === 'events') {
@@ -359,7 +365,7 @@ export function EducationWorkspace() {
                         </div>
                       )}
                     </div>
-                    <Button onClick={handleAddBook} className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto shrink-0 z-0"><Plus className="w-4 h-4 mr-2" /> Create Book</Button>
+                    <Button type="button" onClick={handleAddBook} className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto shrink-0 z-0"><Plus className="w-4 h-4 mr-2" /> Create Book</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -367,7 +373,7 @@ export function EducationWorkspace() {
                 {books.map(b => (
                   <div key={b.id} className="flex justify-between items-center p-5 bg-white border border-green-200 rounded-xl shadow-sm hover:border-green-400 transition-colors">
                     <div><p className="font-bold text-black text-lg">{b.title}</p><Badge variant="outline" className="mt-1 bg-green-50 text-green-700 border-green-200">Active Study</Badge></div>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete('study_books', b.id)}><Trash2 className="w-5 h-5 text-red-500 hover:text-red-700" /></Button>
+                    <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDelete('study_books', b.id, e)}><Trash2 className="w-5 h-5 text-red-500 hover:text-red-700" /></Button>
                   </div>
                 ))}
               </div>
@@ -385,7 +391,7 @@ export function EducationWorkspace() {
                     <Input placeholder="Week (e.g. Week 1)" value={newReading.week} onChange={(e) => setNewReading({...newReading, week: e.target.value})} className="border-green-200" />
                     <Input placeholder="Chapters (e.g. Romans 1-3)" value={newReading.chapters} onChange={(e) => setNewReading({...newReading, chapters: e.target.value})} className="border-green-200" />
                   </div>
-                  <Button onClick={handleAddReading} className="bg-green-600 hover:bg-green-700 text-white w-full"><Plus className="w-4 h-4 mr-2" /> Add Assignment</Button>
+                  <Button type="button" onClick={handleAddReading} className="bg-green-600 hover:bg-green-700 text-white w-full"><Plus className="w-4 h-4 mr-2" /> Add Assignment</Button>
                 </CardContent>
               </Card>
               <div className="space-y-3">
@@ -394,7 +400,7 @@ export function EducationWorkspace() {
                   return (
                     <div key={r.id} className="flex justify-between items-center p-4 bg-white border border-green-100 rounded-lg hover:border-green-300 transition-colors shadow-sm">
                       <div><p className="font-bold text-black">{r.week_title} <span className="text-gray-400 font-normal ml-2">| {book?.title}</span></p><p className="text-sm text-green-700 font-medium">{r.chapters}</p></div>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete('assignments', r.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                      <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDelete('assignments', r.id, e)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
                     </div>
                   )
                 })}
@@ -416,7 +422,7 @@ export function EducationWorkspace() {
                   <div className="space-y-6 pt-4">
                     {questions.map((q, qIdx) => (
                       <div key={qIdx} className="p-4 sm:p-5 bg-white rounded-xl border border-green-200 shadow-sm space-y-4 relative">
-                        <div className="flex justify-between items-center border-b border-gray-100 pb-2"><Label className="text-black font-black tracking-wider uppercase text-xs">Question {qIdx + 1}</Label>{questions.length > 1 && (<Button variant="ghost" size="sm" onClick={() => setQuestions(questions.filter((_, i) => i !== qIdx))} className="h-6 px-2 text-red-600 hover:bg-red-50"><X className="w-3 h-3 mr-1" /> Remove</Button>)}</div>
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2"><Label className="text-black font-black tracking-wider uppercase text-xs">Question {qIdx + 1}</Label>{questions.length > 1 && (<Button type="button" variant="ghost" size="sm" onClick={() => setQuestions(questions.filter((_, i) => i !== qIdx))} className="h-6 px-2 text-red-600 hover:bg-red-50"><X className="w-3 h-3 mr-1" /> Remove</Button>)}</div>
                         <Input placeholder="Type your question here..." value={q.text} className="font-medium border-gray-200" onChange={(e) => { const newQs = [...questions]; newQs[qIdx].text = e.target.value; setQuestions(newQs); }}/>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
                           {q.options.map((opt, oIdx) => (
@@ -430,8 +436,8 @@ export function EducationWorkspace() {
                     ))}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-100">
-                    <Button variant="outline" className="flex-1 border-green-600 text-green-700 hover:bg-green-50" onClick={() => setQuestions([...questions, { text: "", options: ["", "", "", ""], correct: 0 }])}><Plus className="w-4 h-4 mr-2" /> Add Another Question</Button>
-                    <Button className="flex-1 bg-black hover:bg-gray-800 text-white shadow-md font-bold text-lg h-auto py-3" onClick={handleSaveQuiz}><CheckSquare className="w-5 h-5 mr-2" /> Publish {quizType === 'weekly' ? 'Quiz' : 'Exam'}</Button>
+                    <Button type="button" variant="outline" className="flex-1 border-green-600 text-green-700 hover:bg-green-50" onClick={() => setQuestions([...questions, { text: "", options: ["", "", "", ""], correct: 0 }])}><Plus className="w-4 h-4 mr-2" /> Add Another Question</Button>
+                    <Button type="button" className="flex-1 bg-black hover:bg-gray-800 text-white shadow-md font-bold text-lg h-auto py-3" onClick={handleSaveQuiz}><CheckSquare className="w-5 h-5 mr-2" /> Publish {quizType === 'weekly' ? 'Quiz' : 'Exam'}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -451,7 +457,7 @@ export function EducationWorkspace() {
                               <Badge variant="outline" className="bg-gray-100 text-black border-gray-200 w-fit">{quiz.quiz_type}</Badge>
                               <p className="font-bold text-black">{quiz.title}</p>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete('quizzes', quiz.id)}><Trash2 className="w-4 h-4 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" /></Button>
+                            <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDelete('quizzes', quiz.id, e)}><Trash2 className="w-4 h-4 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" /></Button>
                           </div>
                         ))}
                       </div>
@@ -478,13 +484,13 @@ export function EducationWorkspace() {
                   <div className="space-y-3 border-t border-gray-100 pt-4">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2 mb-2"><Label className="text-xs text-black font-bold uppercase">Pin Exact Location on Map</Label>{mapPosition && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px]">Pin Dropped ✓</Badge>}</div>
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" /><Input placeholder="Search for an address, city, or landmark..." value={mapSearchQuery} onChange={(e) => setMapSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()} className="pl-9 border-green-200" /></div>
-                      <Button onClick={handleSearchLocation} disabled={isSearchingMap} variant="outline" className="shrink-0 border-green-600 text-green-700 hover:bg-green-50">{isSearchingMap ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search Map"}</Button>
+                      <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" /><Input placeholder="Search for an address, city, or landmark..." value={mapSearchQuery} onChange={(e) => setMapSearchQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchLocation(); } }} className="pl-9 border-green-200" /></div>
+                      <Button type="button" onClick={handleSearchLocation} disabled={isSearchingMap} variant="outline" className="shrink-0 border-green-600 text-green-700 hover:bg-green-50">{isSearchingMap ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search Map"}</Button>
                     </div>
                     <div className="h-[300px] w-full rounded-xl overflow-hidden border border-gray-200 shadow-inner z-0 relative mt-2"><MapContainer center={[25.2048, 55.2708]} zoom={11} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}><TileLayer attribution='© OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /><LocationPicker position={mapPosition} setPosition={setMapPosition} /><MapUpdater position={mapPosition} /></MapContainer></div>
                   </div>
                   <div className="space-y-2 border-t border-gray-100 pt-4"><Label className="text-xs text-black font-bold uppercase">Details / Description</Label><Textarea placeholder="Event Description..." value={newEvent.description} onChange={(e) => setNewEvent({...newEvent, description: e.target.value})} className="h-24 resize-none border-green-200" /></div>
-                  <Button onClick={handleAddEvent} disabled={isUploading} className="bg-green-600 hover:bg-green-700 text-white w-full py-6 text-lg font-bold shadow-md mt-4">{isUploading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Uploading...</> : <><Plus className="w-5 h-5 mr-2" /> Post Event</>}</Button>
+                  <Button type="button" onClick={handleAddEvent} disabled={isUploading} className="bg-green-600 hover:bg-green-700 text-white w-full py-6 text-lg font-bold shadow-md mt-4">{isUploading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Uploading...</> : <><Plus className="w-5 h-5 mr-2" /> Post Event</>}</Button>
                 </CardContent>
               </Card>
               
@@ -498,7 +504,7 @@ export function EducationWorkspace() {
                         {event.image_url ? <img src={event.image_url} alt={event.title} className="w-12 h-12 rounded-lg object-cover shadow-sm border border-gray-200" /> : <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center text-green-600 shadow-sm border border-green-100"><Calendar className="w-5 h-5" /></div>}
                         <div><p className="font-bold text-black leading-tight">{event.title}</p><p className="text-xs text-gray-500 mt-0.5">{eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p></div>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete('events', event.id)}><Trash2 className="w-5 h-5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" /></Button>
+                      <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDelete('events', event.id, e)}><Trash2 className="w-5 h-5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" /></Button>
                     </div>
                   )
                 })}

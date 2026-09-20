@@ -46,17 +46,20 @@ export function MemberDashboard() {
   const dailyVerse = { verse: "For I know the plans I have for you, declares the Lord, plans for welfare and not for evil, to give you a future and a hope.", reference: "Jeremiah 29:11" };
 
   useEffect(() => {
-    loadMemberData();
+    loadMemberData(true); // Initial load triggers spinner
     // Realtime Listener
     const channel = supabase.channel('member-dashboard-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => { loadMemberData(); })
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => { 
+        loadMemberData(false); // Silent background refresh
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  async function loadMemberData() {
+  async function loadMemberData(isInitial = false) {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return navigate("/");
 
@@ -118,7 +121,7 @@ export function MemberDashboard() {
     } catch (error: any) {
       toast.error("Error loading dashboard data");
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   }
 
@@ -153,7 +156,8 @@ export function MemberDashboard() {
     }
   };
 
-  const handleSubmitQuestion = async () => {
+  const handleSubmitQuestion = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!question.trim() || !currentUser) return;
     setIsSubmitting(true);
     await supabase.from('anoquestions').insert({ user_id: currentUser.id, user_name: "Anonymous", question: question.trim() });
@@ -278,17 +282,17 @@ export function MemberDashboard() {
 
             {/* Calculate Grade Button */}
             {!bookGrade && (
-              <Button onClick={handleDeclareFinished} disabled={isGrading || milestones.final.score === null} className={`w-full py-5 font-semibold shadow-sm rounded-xl transition-all ${milestones.final.score !== null ? "bg-green-600 hover:bg-green-700 text-white animate-pulse" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+              <Button type="button" onClick={handleDeclareFinished} disabled={isGrading || milestones.final.score === null} className={`w-full py-5 font-semibold shadow-sm rounded-xl transition-all ${milestones.final.score !== null ? "bg-green-600 hover:bg-green-700 text-white animate-pulse" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
                 {isGrading ? <Loader2 className="w-4 h-4 animate-spin" /> : milestones.final.score !== null ? "Declare Book Finished & Calculate Final Grade!" : "Complete Final Exam to unlock Grade"}
               </Button>
             )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Button onClick={() => navigate("/app/bible-reading")} className="flex-1 bg-black hover:bg-gray-800 text-white font-medium rounded-xl h-10 transition-all shadow-sm text-xs sm:text-sm">
+              <Button type="button" onClick={() => navigate("/app/bible-reading")} className="flex-1 bg-black hover:bg-gray-800 text-white font-medium rounded-xl h-10 transition-all shadow-sm text-xs sm:text-sm">
                 <BookOpen className="w-4 h-4 mr-2" /> Study Materials
               </Button>
-              <Button onClick={() => navigate("/app/quiz")} variant="outline" className="flex-1 border-gray-200 text-gray-700 font-medium rounded-xl h-10 hover:bg-gray-50 transition-all shadow-sm text-xs sm:text-sm">
+              <Button type="button" onClick={() => navigate("/app/quiz")} variant="outline" className="flex-1 border-gray-200 text-gray-700 font-medium rounded-xl h-10 hover:bg-gray-50 transition-all shadow-sm text-xs sm:text-sm">
                 <CheckSquare className="w-4 h-4 mr-2" /> Practice Quizzes
               </Button>
             </div>
@@ -316,6 +320,7 @@ export function MemberDashboard() {
             />
             <div className="flex justify-end mt-auto">
               <Button 
+                type="button"
                 onClick={handleSubmitQuestion} 
                 disabled={isSubmitting || !question.trim()}
                 className="w-full sm:w-auto px-6 bg-green-600 hover:bg-green-700 text-white font-medium h-10 rounded-xl shadow-sm transition-all"

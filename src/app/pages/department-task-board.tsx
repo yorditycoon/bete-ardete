@@ -139,7 +139,7 @@ export function DepartmentTaskBoard({ departmentId, currentUser, accentColor = "
           
           <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
             <DialogTrigger asChild>
-              <Button size="sm" className={`bg-${accentColor}-600 hover:bg-${accentColor}-700 text-white shadow-sm`}>
+              <Button type="button" size="sm" className={`bg-${accentColor}-600 hover:bg-${accentColor}-700 text-white shadow-sm`}>
                 <Plus className="w-4 h-4 mr-1" /> Assign Task
               </Button>
             </DialogTrigger>
@@ -167,7 +167,12 @@ export function DepartmentTaskBoard({ departmentId, currentUser, accentColor = "
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleCreateTask} disabled={isAdding} className={`w-full bg-${accentColor}-600 hover:bg-${accentColor}-700 text-white`}>
+                <Button 
+                  type="button" 
+                  onClick={(e) => { e.preventDefault(); handleCreateTask(); }} 
+                  disabled={isAdding} 
+                  className={`w-full bg-${accentColor}-600 hover:bg-${accentColor}-700 text-white`}
+                >
                   {isAdding ? "Assigning..." : "Assign Task"}
                 </Button>
               </DialogFooter>
@@ -215,17 +220,34 @@ export function DepartmentTaskBoard({ departmentId, currentUser, accentColor = "
                 {/* Bottom Row: Actions */}
                 <div className="flex justify-end gap-2 border-t border-gray-50 pt-2 mt-1">
                   {(isAssignedToMe || isHead) && task.status === 'pending' && (
-                    <Button size="sm" variant="outline" onClick={() => updateTaskStatus(task.id, 'in_progress')} className="h-7 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={(e) => { e.preventDefault(); updateTaskStatus(task.id, 'in_progress'); }} 
+                      className="h-7 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                    >
                       Accept Task <ArrowRight className="w-3 h-3 ml-1" />
                     </Button>
                   )}
                   {(isAssignedToMe || isHead) && task.status === 'in_progress' && (
-                    <Button size="sm" onClick={() => updateTaskStatus(task.id, 'completed')} className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white">
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      onClick={(e) => { e.preventDefault(); updateTaskStatus(task.id, 'completed'); }} 
+                      className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+                    >
                       <CheckCircle2 className="w-3 h-3 mr-1" /> Mark Complete
                     </Button>
                   )}
                   {isHead && (
-                    <Button size="icon" variant="ghost" onClick={() => deleteTask(task.id)} className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50">
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={(e) => { e.preventDefault(); deleteTask(task.id); }} 
+                      className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    >
                       <Trash2 className="w-3 h-3" />
                     </Button>
                   )}

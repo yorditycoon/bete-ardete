@@ -55,12 +55,17 @@ export function ParentDashboard() {
   const [milestones, setMilestones] = useState({ midterm: { published: false, score: null as number | null }, final: { published: false, score: null as number | null }, avgWeeklyQuiz: 0 });
 
   useEffect(() => {
-    loadParentData();
-    const channel = supabase.channel('parent-dashboard-realtime').on('postgres_changes', { event: '*', schema: 'public' }, () => { loadParentData(); }).subscribe();
+    loadParentData(true); // Pass true for initial load to show spinner
+    const channel = supabase.channel('parent-dashboard-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => { 
+        loadParentData(false); // Silent background refresh
+      })
+      .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const handleDeleteMember = async (memberId: string, name: string) => {
+  const handleDeleteMember = async (memberId: string, name: string, e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (memberId === currentUser?.id) return toast.error("You cannot delete your own account from here.");
     if (!window.confirm(`Are you sure you want to remove ${name}?`)) return;
     try {
@@ -72,9 +77,10 @@ export function ParentDashboard() {
     } catch (err: any) { toast.error(err.message); }
   };
 
-  async function loadParentData() {
+  async function loadParentData(isInitial = false) {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/"); return; }
       
@@ -156,10 +162,15 @@ export function ParentDashboard() {
         });
       }
 
-    } catch (error: any) { toast.error(error.message); } finally { setLoading(false); }
+    } catch (error: any) { 
+      toast.error(error.message); 
+    } finally { 
+      if (isInitial) setLoading(false); 
+    }
   }
 
-  const handleDeclareFinished = async () => {
+  const handleDeclareFinished = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!activeBook || !currentUser) return;
     if (milestones.final.score === null) return toast.error("You must complete the Final Exam before declaring the book finished!");
 
@@ -180,7 +191,8 @@ export function ParentDashboard() {
     } catch (err: any) { toast.error(err.message); } finally { setIsGrading(false); }
   };
 
-  const handleSubmitQuestion = async () => {
+  const handleSubmitQuestion = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!question.trim() || !currentUser) return;
     setIsSubmittingQuestion(true);
     try {
@@ -191,7 +203,8 @@ export function ParentDashboard() {
     } catch (error: any) { toast.error(error.message); } finally { setIsSubmittingQuestion(false); }
   };
 
-  const handleRegisterMember = async () => {
+  const handleRegisterMember = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!newMember.name || !newMember.email || !newMember.password) return toast.error("Fill all fields");
     if (newMember.password.length < 6) return toast.error("Password must be at least 6 characters");
     try {
@@ -200,8 +213,9 @@ export function ParentDashboard() {
       const { error } = await ghostClient.auth.signUp({ email: newMember.email, password: newMember.password, options: { data: { full_name: newMember.name, family_id: familyId, role: 'member' } } });
       if (error) throw error;
       toast.success("Child account created");
-      setNewMember({ name: "", email: "", password: "" }); setIsAddChildOpen(false);
-      setTimeout(loadParentData, 1000); 
+      setNewMember({ name: "", email: "", password: "" }); 
+      setIsAddChildOpen(false);
+      setTimeout(() => loadParentData(false), 1000); 
     } catch (error: any) { toast.error(error.message); } finally { setIsRegistering(false); }
   };
 
@@ -273,7 +287,7 @@ export function ParentDashboard() {
               </div>
             </div>
             {!bookGrade && (
-              <Button onClick={handleDeclareFinished} disabled={isGrading || milestones.final.score === null} className={`w-full py-6 font-bold shadow-md rounded-xl transition-all ${milestones.final.score !== null ? "bg-green-600 hover:bg-green-700 text-white animate-pulse" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+              <Button type="button" onClick={handleDeclareFinished} disabled={isGrading || milestones.final.score === null} className={`w-full py-6 font-bold shadow-md rounded-xl transition-all ${milestones.final.score !== null ? "bg-green-600 hover:bg-green-700 text-white animate-pulse" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
                 {isGrading ? <Loader2 className="w-5 h-5 animate-spin" /> : milestones.final.score !== null ? "Declare Book Finished & Calculate Final Grade!" : "Complete Final Exam to unlock Grade"}
               </Button>
             )}
@@ -291,7 +305,7 @@ export function ParentDashboard() {
           </CardHeader>
           <CardContent className="space-y-4 flex-1 flex flex-col p-6">
             <Textarea placeholder="Type your question here..." value={question} onChange={(e) => setQuestion(e.target.value)} className="resize-none border-gray-200 focus-visible:ring-green-600 rounded-2xl flex-1 min-h-[150px] text-black font-medium p-4 shadow-sm" />
-            <Button onClick={handleSubmitQuestion} disabled={!question.trim() || isSubmittingQuestion} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md py-6 transition-all">
+            <Button type="button" onClick={handleSubmitQuestion} disabled={!question.trim() || isSubmittingQuestion} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md py-6 transition-all">
               {isSubmittingQuestion ? "Sending..." : "Submit Question"}
             </Button>
           </CardContent>
@@ -314,9 +328,9 @@ export function ParentDashboard() {
                   )}
                   <div className="p-4 flex flex-col flex-1 min-w-0">
                     <h4 className="font-bold text-black text-sm sm:text-base mb-1.5 truncate">{event.title}</h4>
-                    {event.description && <p className="text-xs text-gray-500 mb-4 line-clamp-2">{event.description}</p>}
+                    {event.description && <p className="text-xs text-gray-500 mb-3 line-clamp-2">{event.description}</p>}
                     <div className="mt-auto pt-2 border-t border-gray-50">
-                      {event.location && <a href={event.location.startsWith('http') ? event.location : `https://maps.google.com/?q=${event.location}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700 text-xs font-bold py-2.5 rounded-xl transition-all border border-gray-100"><MapPin className="w-4 h-4" /> Open in Maps</a>}
+                      {event.location && <a href={event.location.startsWith('http') ? event.location : `https://maps.google.com/?q=${event.location}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700 text-xs font-bold py-2.5 rounded-xl transition-all border border-green-200"><MapPin className="w-4 h-4" /> Open in Maps</a>}
                     </div>
                   </div>
                 </div>
@@ -330,7 +344,7 @@ export function ParentDashboard() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
           <h2 className="text-2xl font-black text-black flex items-center gap-2"><Users className="w-6 h-6 text-green-600" /> Household Overview</h2>
           <Dialog open={isAddChildOpen} onOpenChange={setIsAddChildOpen}>
-            <DialogTrigger asChild><Button className="bg-black hover:bg-gray-800 text-white font-bold w-full sm:w-auto shadow-md rounded-xl h-11 transition-all"><UserPlus className="w-4 h-4 mr-2" /> Add Child to Family</Button></DialogTrigger>
+            <DialogTrigger asChild><Button type="button" className="bg-black hover:bg-gray-800 text-white font-bold w-full sm:w-auto shadow-md rounded-xl h-11 transition-all"><UserPlus className="w-4 h-4 mr-2" /> Add Child to Family</Button></DialogTrigger>
             <DialogContent className="bg-white border border-green-100 rounded-3xl p-6 sm:p-8">
               <DialogHeader><DialogTitle className="text-black font-black text-xl mb-2">Add Child to Family</DialogTitle></DialogHeader>
               <div className="space-y-4 py-4">
@@ -338,7 +352,7 @@ export function ParentDashboard() {
                 <Input placeholder="Email (e.g. child@family.com)" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
                 <Input placeholder="Password" type="password" value={newMember.password} onChange={e => setNewMember({...newMember, password: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
               </div>
-              <DialogFooter><Button onClick={handleRegisterMember} disabled={isRegistering} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md font-bold rounded-xl h-12 transition-all">{isRegistering ? "Processing..." : "Create Account"}</Button></DialogFooter>
+              <DialogFooter><Button type="button" onClick={handleRegisterMember} disabled={isRegistering} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md font-bold rounded-xl h-12 transition-all">{isRegistering ? "Processing..." : "Create Account"}</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -398,11 +412,11 @@ export function ParentDashboard() {
                       </td>
                       <td className="p-4 sm:p-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50 font-bold text-xs rounded-lg" onClick={() => navigate(`/app/family-activities`)}>
+                          <Button type="button" variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50 font-bold text-xs rounded-lg" onClick={() => navigate(`/app/family-activities`)}>
                             Progress
                           </Button>
                           {m.role !== 'parent' && (
-                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 rounded-lg" onClick={() => handleDeleteMember(m.id, m.name)} title="Remove Member">
+                            <Button type="button" variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 rounded-lg" onClick={(e) => handleDeleteMember(m.id, m.name, e)} title="Remove Member">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           )}
