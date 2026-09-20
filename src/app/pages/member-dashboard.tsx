@@ -162,7 +162,7 @@ export function MemberDashboard() {
     setIsSubmitting(false);
   };
 
-  if (loading) return <div className="flex h-[60vh] justify-center items-center"><Loader2 className="w-8 h-8 animate-spin text-green-600" /></div>;
+  if (loading) return <div className="flex h-[60vh] justify-center items-center"><Loader2 className="w-10 h-10 animate-spin text-green-600" /></div>;
 
   const departmentName = currentUser?.departments?.name_en;
   const isDeptHead = currentUser?.department_role === 'head' || currentUser?.department_role === 'deputy' || currentUser?.department_role === 'secretary';
@@ -218,177 +218,168 @@ export function MemberDashboard() {
           </CardContent>
         </Card>
       </div>
-      
-      {/* 2-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        
-        {/* LEFT COLUMN: Midterm/Final Exams & Questions */}
-        <div className="space-y-6">
 
-          {/* DYNAMIC Study Progress (Midterm & Final) */}
-          {activeBook && (
-            <Card className={`border-green-200 shadow-sm bg-white rounded-3xl overflow-hidden ${bookGrade ? "bg-gradient-to-br from-green-50/50 to-white" : ""}`}>
-              <CardHeader className="p-6 border-b border-gray-100 bg-gray-50/50">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-lg text-black font-bold">
-                      <BookMarked className="w-5 h-5 text-green-600" /> My Study: {activeBook.title}
-                    </CardTitle>
-                    <CardDescription className="text-sm mt-1">Track your personal milestones</CardDescription>
-                  </div>
-                  {bookGrade && (
-                    <div className="text-right">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-green-600">Final Grade</p>
-                      <p className="text-2xl sm:text-3xl font-bold text-black">{bookGrade.final_score}%</p>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-                  {/* Midterm Status */}
-                  <div className={`p-4 rounded-2xl border flex items-center justify-between ${milestones.midterm.score !== null ? "bg-green-50/50 border-green-200" : "bg-gray-50 border-gray-100"} shadow-sm transition-all`}>
-                    <div>
-                      <p className="text-sm font-semibold text-black">Midterm Exam</p>
-                      {milestones.midterm.published ? (
-                        milestones.midterm.score !== null ? (
-                          <p className="text-xs text-green-700 font-medium mt-1">Completed: {milestones.midterm.score}%</p>
-                        ) : (
-                          <p className="text-xs text-green-600 font-medium mt-1">Unlocked - Go to Quizzes!</p>
-                        )
-                      ) : (
-                        <p className="text-xs text-gray-400 mt-1">Not published yet</p>
-                      )}
-                    </div>
-                    {milestones.midterm.score !== null ? <CheckCircle className="w-6 h-6 text-green-600 shrink-0" /> : milestones.midterm.published ? <Unlock className="w-6 h-6 text-green-600 shrink-0" /> : <Lock className="w-6 h-6 text-gray-300 shrink-0" />}
-                  </div>
-                  
-                  {/* Final Exam Status */}
-                  <div className={`p-4 rounded-2xl border flex items-center justify-between ${milestones.final.score !== null ? "bg-green-50/50 border-green-200" : "bg-gray-50 border-gray-100"} shadow-sm transition-all`}>
-                    <div>
-                      <p className="text-sm font-semibold text-black">Final Exam</p>
-                      {milestones.final.published ? (
-                        milestones.final.score !== null ? (
-                          <p className="text-xs text-green-700 font-medium mt-1">Completed: {milestones.final.score}%</p>
-                        ) : (
-                          <p className="text-xs text-green-600 font-medium mt-1">Unlocked - Go to Quizzes!</p>
-                        )
-                      ) : (
-                        <p className="text-xs text-gray-400 mt-1">Not published yet</p>
-                      )}
-                    </div>
-                    {milestones.final.score !== null ? <Trophy className="w-6 h-6 text-green-600 shrink-0" /> : milestones.final.published ? <Unlock className="w-6 h-6 text-green-600 shrink-0" /> : <Lock className="w-6 h-6 text-gray-300 shrink-0" />}
-                  </div>
-                </div>
-
-                {/* Calculate Grade Button */}
-                {!bookGrade && (
-                  <Button onClick={handleDeclareFinished} disabled={isGrading || milestones.final.score === null} className={`w-full py-5 font-semibold shadow-sm rounded-xl transition-all ${milestones.final.score !== null ? "bg-green-600 hover:bg-green-700 text-white animate-pulse" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
-                    {isGrading ? <Loader2 className="w-4 h-4 animate-spin" /> : milestones.final.score !== null ? "Declare Book Finished & Calculate Final Grade!" : "Complete Final Exam to unlock Grade"}
-                  </Button>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-2">
-                  <Button onClick={() => navigate("/app/bible-reading")} className="flex-1 bg-black hover:bg-gray-800 text-white font-medium rounded-xl h-10 transition-all shadow-sm text-xs sm:text-sm">
-                    <BookOpen className="w-4 h-4 mr-2" /> Study Materials
-                  </Button>
-                  <Button onClick={() => navigate("/app/quiz")} variant="outline" className="flex-1 border-gray-200 text-gray-700 font-medium rounded-xl h-10 hover:bg-gray-50 transition-all shadow-sm text-xs sm:text-sm">
-                    <CheckSquare className="w-4 h-4 mr-2" /> Practice Quizzes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Ask a Question Card */}
-          <Card className="border-green-200 shadow-sm bg-white rounded-3xl overflow-hidden">
-            <CardHeader className="p-6 border-b border-gray-100 bg-gray-50/50">
-              <CardTitle className="flex items-center gap-2 text-lg text-black font-bold">
-                <MessageSquare className="w-5 h-5 text-green-600" /> Ask a Question
-              </CardTitle>
-              <CardDescription className="text-sm mt-1">Submit anonymous questions to church leadership or the education team.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <Textarea
-                placeholder="What's on your mind? (Completely anonymous)"
-                className="resize-none h-28 border-gray-200 focus-visible:ring-green-500 rounded-2xl text-sm p-4 shadow-sm"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-              />
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleSubmitQuestion} 
-                  disabled={isSubmitting || !question.trim()}
-                  className="w-full sm:w-auto px-6 bg-green-600 hover:bg-green-700 text-white font-medium h-10 rounded-xl shadow-sm transition-all"
-                >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  {isSubmitting ? "Submitting..." : "Submit Anonymously"}
-                </Button>
+      {/* FULL WIDTH: My Study Progress */}
+      {activeBook && (
+        <Card className={`w-full border-green-200 shadow-sm bg-white rounded-3xl overflow-hidden ${bookGrade ? "bg-gradient-to-br from-green-50/50 to-white" : ""}`}>
+          <CardHeader className="p-6 border-b border-gray-100 bg-gray-50/50">
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg text-black font-bold">
+                  <BookMarked className="w-5 h-5 text-green-600" /> My Study: {activeBook.title}
+                </CardTitle>
+                <CardDescription className="text-sm mt-1">Track your personal milestones</CardDescription>
               </div>
-            </CardContent>
-          </Card>
-
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div className="space-y-6">
-          
-          {/* Upcoming Events Feed */}
-          <Card className="border-green-200 shadow-sm bg-white rounded-3xl flex flex-col h-full overflow-hidden">
-            <CardHeader className="p-6 border-b border-gray-100 bg-gray-50/50">
-              <CardTitle className="flex items-center gap-2 text-lg text-black font-bold">
-                <Calendar className="w-5 h-5 text-green-600" /> Upcoming Gatherings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 flex-1 overflow-y-auto space-y-4 custom-scrollbar">
-              {upcomingEvents.length > 0 ? (
-                upcomingEvents.map(event => {
-                  const eventDate = new Date(event.event_date);
-                  return (
-                    <div key={event.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-200 transition-all flex flex-col sm:flex-row overflow-hidden group">
-                      {event.image_url ? (
-                        <div className="w-full sm:w-32 h-32 sm:h-auto relative overflow-hidden bg-gray-100 shrink-0">
-                          <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          <div className="absolute top-2 right-2 sm:hidden bg-white/95 px-2.5 py-1 rounded-xl text-center shadow-sm">
-                            <p className="text-[10px] font-semibold text-green-700 uppercase leading-none mb-1">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
-                            <p className="text-sm font-bold leading-none">{eventDate.getDate()}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-full sm:w-32 h-16 sm:h-auto bg-green-50/50 flex items-center justify-center border-b sm:border-b-0 sm:border-r border-gray-100 shrink-0 p-3">
-                          <div className="bg-white px-3 py-2 rounded-xl shadow-sm text-center border border-gray-100 w-full sm:w-auto">
-                            <p className="text-[10px] font-semibold text-green-700 uppercase leading-none mb-1">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
-                            <p className="text-lg font-bold leading-none">{eventDate.getDate()}</p>
-                          </div>
-                        </div>
-                      )}
-                      <div className="p-4 flex flex-col flex-1 min-w-0">
-                        <h4 className="font-bold text-black text-sm sm:text-base mb-1.5 truncate">{event.title}</h4>
-                        {event.description && <p className="text-xs text-gray-500 mb-3 line-clamp-2 leading-relaxed">{event.description}</p>}
-                        <div className="mt-auto pt-3 border-t border-gray-50">
-                          {event.location && (
-                            <a href={event.location.startsWith('http') ? event.location : `https://maps.google.com/?q=${event.location}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700 text-xs font-medium py-2 rounded-lg transition-colors border border-gray-100">
-                              <MapPin className="w-3.5 h-3.5" /> View Location Map
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                  <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500 font-medium text-sm">No upcoming events right now.</p>
+              {bookGrade && (
+                <div className="text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-green-600">Final Grade</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-black">{bookGrade.final_score}%</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 space-y-5">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Midterm Status */}
+              <div className={`p-4 rounded-2xl border flex items-center justify-between ${milestones.midterm.score !== null ? "bg-green-50/50 border-green-200" : "bg-gray-50 border-gray-100"} shadow-sm transition-all`}>
+                <div>
+                  <p className="text-sm font-semibold text-black">Midterm Exam</p>
+                  {milestones.midterm.published ? (
+                    milestones.midterm.score !== null ? (
+                      <p className="text-xs text-green-700 font-medium mt-1">Completed: {milestones.midterm.score}%</p>
+                    ) : (
+                      <p className="text-xs text-green-600 font-medium mt-1">Unlocked - Go to Quizzes!</p>
+                    )
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-1">Not published yet</p>
+                  )}
+                </div>
+                {milestones.midterm.score !== null ? <CheckCircle className="w-6 h-6 text-green-600 shrink-0" /> : milestones.midterm.published ? <Unlock className="w-6 h-6 text-green-600 shrink-0" /> : <Lock className="w-6 h-6 text-gray-300 shrink-0" />}
+              </div>
+              
+              {/* Final Exam Status */}
+              <div className={`p-4 rounded-2xl border flex items-center justify-between ${milestones.final.score !== null ? "bg-green-50/50 border-green-200" : "bg-gray-50 border-gray-100"} shadow-sm transition-all`}>
+                <div>
+                  <p className="text-sm font-semibold text-black">Final Exam</p>
+                  {milestones.final.published ? (
+                    milestones.final.score !== null ? (
+                      <p className="text-xs text-green-700 font-medium mt-1">Completed: {milestones.final.score}%</p>
+                    ) : (
+                      <p className="text-xs text-green-600 font-medium mt-1">Unlocked - Go to Quizzes!</p>
+                    )
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-1">Not published yet</p>
+                  )}
+                </div>
+                {milestones.final.score !== null ? <Trophy className="w-6 h-6 text-green-600 shrink-0" /> : milestones.final.published ? <Unlock className="w-6 h-6 text-green-600 shrink-0" /> : <Lock className="w-6 h-6 text-gray-300 shrink-0" />}
+              </div>
+            </div>
 
-        </div>
+            {/* Calculate Grade Button */}
+            {!bookGrade && (
+              <Button onClick={handleDeclareFinished} disabled={isGrading || milestones.final.score === null} className={`w-full py-5 font-semibold shadow-sm rounded-xl transition-all ${milestones.final.score !== null ? "bg-green-600 hover:bg-green-700 text-white animate-pulse" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+                {isGrading ? <Loader2 className="w-4 h-4 animate-spin" /> : milestones.final.score !== null ? "Declare Book Finished & Calculate Final Grade!" : "Complete Final Exam to unlock Grade"}
+              </Button>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button onClick={() => navigate("/app/bible-reading")} className="flex-1 bg-black hover:bg-gray-800 text-white font-medium rounded-xl h-10 transition-all shadow-sm text-xs sm:text-sm">
+                <BookOpen className="w-4 h-4 mr-2" /> Study Materials
+              </Button>
+              <Button onClick={() => navigate("/app/quiz")} variant="outline" className="flex-1 border-gray-200 text-gray-700 font-medium rounded-xl h-10 hover:bg-gray-50 transition-all shadow-sm text-xs sm:text-sm">
+                <CheckSquare className="w-4 h-4 mr-2" /> Practice Quizzes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 2-COLUMN LAYOUT: Ask Question & Events side-by-side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        
+        {/* LEFT COLUMN: Ask a Question */}
+        <Card className="border-green-200 shadow-sm bg-white rounded-3xl overflow-hidden h-full flex flex-col">
+          <CardHeader className="p-6 border-b border-gray-100 bg-gray-50/50">
+            <CardTitle className="flex items-center gap-2 text-lg text-black font-bold">
+              <MessageSquare className="w-5 h-5 text-green-600" /> Ask a Question
+            </CardTitle>
+            <CardDescription className="text-sm mt-1">Submit anonymous questions to church leadership or the education team.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4 flex-1 flex flex-col">
+            <Textarea
+              placeholder="What's on your mind? (Completely anonymous)"
+              className="resize-none border-gray-200 focus-visible:ring-green-500 rounded-2xl text-sm p-4 shadow-sm flex-1 min-h-[120px]"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+            <div className="flex justify-end mt-auto">
+              <Button 
+                onClick={handleSubmitQuestion} 
+                disabled={isSubmitting || !question.trim()}
+                className="w-full sm:w-auto px-6 bg-green-600 hover:bg-green-700 text-white font-medium h-10 rounded-xl shadow-sm transition-all"
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {isSubmitting ? "Submitting..." : "Submit Anonymously"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* RIGHT COLUMN: Upcoming Events */}
+        <Card className="border-green-200 shadow-sm bg-white rounded-3xl flex flex-col h-full overflow-hidden">
+          <CardHeader className="p-6 border-b border-gray-100 bg-gray-50/50">
+            <CardTitle className="flex items-center gap-2 text-lg text-black font-bold">
+              <Calendar className="w-5 h-5 text-green-600" /> Upcoming Gatherings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 flex-1 overflow-y-auto space-y-4 custom-scrollbar max-h-[350px]">
+            {upcomingEvents.length > 0 ? (
+              upcomingEvents.map(event => {
+                const eventDate = new Date(event.event_date);
+                return (
+                  <div key={event.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-200 transition-all flex flex-col sm:flex-row overflow-hidden group">
+                    {event.image_url ? (
+                      <div className="w-full sm:w-32 h-32 sm:h-auto relative overflow-hidden bg-gray-100 shrink-0">
+                        <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <div className="absolute top-2 right-2 sm:hidden bg-white/95 px-2.5 py-1 rounded-xl text-center shadow-sm">
+                          <p className="text-[10px] font-semibold text-green-700 uppercase leading-none mb-1">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
+                          <p className="text-sm font-bold leading-none">{eventDate.getDate()}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full sm:w-32 h-16 sm:h-auto bg-green-50/50 flex items-center justify-center border-b sm:border-b-0 sm:border-r border-gray-100 shrink-0 p-3">
+                        <div className="bg-white px-3 py-2 rounded-xl shadow-sm text-center border border-gray-100 w-full sm:w-auto">
+                          <p className="text-[10px] font-semibold text-green-700 uppercase leading-none mb-1">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
+                          <p className="text-lg font-bold leading-none">{eventDate.getDate()}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="p-4 flex flex-col flex-1 min-w-0">
+                      <h4 className="font-bold text-black text-sm sm:text-base mb-1.5 truncate">{event.title}</h4>
+                      {event.description && <p className="text-xs text-gray-500 mb-3 line-clamp-2 leading-relaxed">{event.description}</p>}
+                      <div className="mt-auto pt-3 border-t border-gray-50">
+                        {event.location && (
+                          <a href={event.location.startsWith('http') ? event.location : `https://maps.google.com/?q=${event.location}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700 text-xs font-medium py-2 rounded-lg transition-colors border border-gray-100">
+                            <MapPin className="w-3.5 h-3.5" /> View Location Map
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                <p className="text-gray-500 font-medium text-sm">No upcoming events right now.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
     </div>
   );
 

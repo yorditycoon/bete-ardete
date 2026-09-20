@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { 
   Users, UserPlus, Loader2, Calendar, BookMarked, CheckCircle, 
   Unlock, Lock, Trophy, BookOpen, Trash2, MapPin, MessageSquare, 
-  UserCheck, Shield
+  UserCheck, Shield, BookText
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useNavigate } from "react-router";
@@ -214,56 +214,66 @@ export function ParentDashboard() {
     <div className="space-y-6 animate-in fade-in duration-500">
       
       {/* Quick Parent Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <Card className="border-green-200 shadow-sm bg-white">
-          <CardContent className="pt-6 flex justify-between items-center">
-            <div><p className="text-[10px] font-bold uppercase text-gray-500">My Attendance</p><p className="text-2xl font-black text-black">{attendanceRate}%</p></div>
-            <UserCheck className="w-8 h-8 text-green-600" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <Card className="border-green-200 shadow-sm bg-white rounded-3xl hover:shadow-md transition-all">
+          <CardContent className="p-6 flex justify-between items-center">
+            <div>
+              <p className="text-[10px] font-bold uppercase text-gray-500 tracking-widest">My Attendance</p>
+              <p className="text-3xl font-black text-black mt-2">{attendanceRate}%</p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center shrink-0 border border-green-100">
+              <UserCheck className="w-6 h-6 text-green-600" />
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-green-200 shadow-sm cursor-pointer hover:border-green-400 transition-all bg-white" onClick={() => navigate("/app/bible-reading")}>
-          <CardContent className="pt-6 flex justify-between items-center">
-            <div><p className="text-[10px] font-bold uppercase text-gray-500">My Study Progress</p><p className="text-2xl font-black text-black">{parentStats.completedReadings}/{parentStats.totalReadings}</p></div>
-            <BookOpen className="w-8 h-8 text-green-600" />
+        <Card className="border-green-200 shadow-sm cursor-pointer hover:border-green-400 hover:shadow-md transition-all bg-white rounded-3xl" onClick={() => navigate("/app/bible-reading")}>
+          <CardContent className="p-6 flex justify-between items-center">
+            <div>
+              <p className="text-[10px] font-bold uppercase text-gray-500 tracking-widest">My Study Progress</p>
+              <p className="text-3xl font-black text-black mt-2">{parentStats.completedReadings}<span className="text-lg text-gray-400">/{parentStats.totalReadings}</span></p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center shrink-0 border border-green-100">
+              <BookOpen className="w-6 h-6 text-green-600" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {activeBook && (
-        <Card className={`border-green-200 shadow-sm bg-white ${bookGrade ? "bg-gradient-to-br from-green-50/50 to-white" : ""}`}>
-          <CardHeader className="border-b border-gray-100 bg-gray-50/50 pb-4">
+        <Card className={`border-green-200 shadow-sm rounded-3xl bg-white overflow-hidden ${bookGrade ? "bg-gradient-to-br from-green-50/50 to-white" : ""}`}>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50 p-6 sm:p-8">
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle className="flex items-center gap-2 text-xl text-black"><BookMarked className="w-6 h-6 text-green-600" /> My Study: {activeBook.title}</CardTitle>
-                <CardDescription className="font-medium mt-1 text-gray-500">Track your personal milestones</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-xl text-black font-black"><BookMarked className="w-6 h-6 text-green-600" /> My Study: {activeBook.title}</CardTitle>
+                <CardDescription className="font-medium mt-1 text-gray-500 text-sm">Track your personal milestones</CardDescription>
               </div>
               {bookGrade && (
                 <div className="text-right">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-green-600">Final Grade</p>
-                  <p className="text-4xl font-black text-black">{bookGrade.final_score}%</p>
+                  <p className="text-3xl sm:text-4xl font-black text-black">{bookGrade.final_score}%</p>
                 </div>
               )}
             </div>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="p-6 sm:p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className={`p-5 rounded-xl border flex items-center justify-between ${milestones.midterm.score !== null ? "bg-green-50/50 border-green-200" : "bg-gray-50 border-gray-200"}`}>
+              <div className={`p-5 rounded-2xl border flex items-center justify-between ${milestones.midterm.score !== null ? "bg-green-50/50 border-green-200" : "bg-gray-50 border-gray-100"} shadow-sm transition-all`}>
                 <div>
-                  <p className="font-bold text-black">Midterm Exam</p>
-                  {milestones.midterm.published ? (milestones.midterm.score !== null ? <p className="text-sm text-green-700 font-bold mt-1">Completed: {milestones.midterm.score}%</p> : <p className="text-sm text-green-600 font-bold mt-1">Unlocked - Go to Quizzes!</p>) : <p className="text-sm text-gray-400 mt-1">Not published yet</p>}
+                  <p className="font-bold text-black text-sm sm:text-base">Midterm Exam</p>
+                  {milestones.midterm.published ? (milestones.midterm.score !== null ? <p className="text-xs sm:text-sm text-green-700 font-bold mt-1">Completed: {milestones.midterm.score}%</p> : <p className="text-xs sm:text-sm text-green-600 font-bold mt-1">Unlocked - Go to Quizzes!</p>) : <p className="text-xs text-gray-400 mt-1">Not published yet</p>}
                 </div>
-                {milestones.midterm.score !== null ? <CheckCircle className="w-8 h-8 text-green-600" /> : milestones.midterm.published ? <Unlock className="w-8 h-8 text-green-600" /> : <Lock className="w-8 h-8 text-gray-300" />}
+                {milestones.midterm.score !== null ? <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" /> : milestones.midterm.published ? <Unlock className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" /> : <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-gray-300" />}
               </div>
-              <div className={`p-5 rounded-xl border flex items-center justify-between ${milestones.final.score !== null ? "bg-green-50/50 border-green-200" : "bg-gray-50 border-gray-200"}`}>
+              <div className={`p-5 rounded-2xl border flex items-center justify-between ${milestones.final.score !== null ? "bg-green-50/50 border-green-200" : "bg-gray-50 border-gray-100"} shadow-sm transition-all`}>
                 <div>
-                  <p className="font-bold text-black">Final Exam</p>
-                  {milestones.final.published ? (milestones.final.score !== null ? <p className="text-sm text-green-700 font-bold mt-1">Completed: {milestones.final.score}%</p> : <p className="text-sm text-green-600 font-bold mt-1">Unlocked - Go to Quizzes!</p>) : <p className="text-sm text-gray-400 mt-1">Not published yet</p>}
+                  <p className="font-bold text-black text-sm sm:text-base">Final Exam</p>
+                  {milestones.final.published ? (milestones.final.score !== null ? <p className="text-xs sm:text-sm text-green-700 font-bold mt-1">Completed: {milestones.final.score}%</p> : <p className="text-xs sm:text-sm text-green-600 font-bold mt-1">Unlocked - Go to Quizzes!</p>) : <p className="text-xs text-gray-400 mt-1">Not published yet</p>}
                 </div>
-                {milestones.final.score !== null ? <Trophy className="w-8 h-8 text-green-600" /> : milestones.final.published ? <Unlock className="w-8 h-8 text-green-600" /> : <Lock className="w-8 h-8 text-gray-300" />}
+                {milestones.final.score !== null ? <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" /> : milestones.final.published ? <Unlock className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" /> : <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-gray-300" />}
               </div>
             </div>
             {!bookGrade && (
-              <Button onClick={handleDeclareFinished} disabled={isGrading || milestones.final.score === null} className={`w-full py-6 font-bold shadow-md rounded-xl ${milestones.final.score !== null ? "bg-green-600 hover:bg-green-700 text-white animate-pulse" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+              <Button onClick={handleDeclareFinished} disabled={isGrading || milestones.final.score === null} className={`w-full py-6 font-bold shadow-md rounded-xl transition-all ${milestones.final.score !== null ? "bg-green-600 hover:bg-green-700 text-white animate-pulse" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
                 {isGrading ? <Loader2 className="w-5 h-5 animate-spin" /> : milestones.final.score !== null ? "Declare Book Finished & Calculate Final Grade!" : "Complete Final Exam to unlock Grade"}
               </Button>
             )}
@@ -272,68 +282,79 @@ export function ParentDashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-green-200 shadow-sm bg-white h-full flex flex-col">
-          <CardHeader className="pb-3 border-b border-gray-100 bg-gray-50/50 rounded-t-xl flex-none"><CardTitle className="flex items-center gap-2 text-lg text-black"><Calendar className="w-5 h-5 text-green-600" /> Upcoming Gatherings</CardTitle></CardHeader>
-          <CardContent className="pt-4 flex-1 overflow-y-auto space-y-4 max-h-[400px]">
-            {upcomingEvents.length > 0 ? (upcomingEvents.map(event => {
-              const eventDate = new Date(event.event_date);
-              return (
-                <div key={event.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:border-green-300 transition-all flex flex-col overflow-hidden">
-                  {event.image_url ? (
-                    <div className="w-full h-24 relative overflow-hidden bg-gray-100"><img src={event.image_url} alt={event.title} className="w-full h-full object-cover" /><div className="absolute top-2 right-2 bg-white/95 px-3 py-1.5 rounded-lg text-center shadow-sm"><p className="text-[10px] font-bold text-green-700 uppercase leading-none mb-0.5">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p><p className="text-lg font-black leading-none">{eventDate.getDate()}</p></div></div>
-                  ) : (
-                    <div className="w-full h-16 bg-gray-50 flex items-center justify-center relative border-b border-gray-100"><div className="bg-white px-3 py-1 rounded shadow-sm text-center border border-gray-200"><p className="text-[9px] font-bold text-green-700 uppercase leading-none">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p><p className="text-sm font-black leading-none mt-0.5">{eventDate.getDate()}</p></div></div>
-                  )}
-                  <div className="p-4 flex flex-col flex-1">
-                    <h4 className="font-bold text-black text-base mb-1.5">{event.title}</h4>
-                    {event.description && <p className="text-xs text-gray-500 mb-4 line-clamp-2">{event.description}</p>}
-                    <div className="mt-auto pt-2 border-t border-gray-50">
-                      {event.location && <a href={event.location.startsWith('http') ? event.location : `https://maps.google.com/?q=${event.location}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-green-50 hover:bg-green-600 text-green-700 hover:text-white text-sm font-bold py-2.5 rounded-xl transition-all border border-green-200"><MapPin className="w-4 h-4" /> Open in Maps</a>}
-                    </div>
-                  </div>
-                </div>
-              );
-            })) : (<div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200"><p className="text-gray-400 italic text-sm">No upcoming events right now.</p></div>)}
-          </CardContent>
-        </Card>
-
-        <Card className="border-green-200 shadow-sm h-full flex flex-col bg-white">
-          <CardHeader className="flex-none border-b border-gray-100 pb-4 bg-gray-50/50"><CardTitle className="flex items-center gap-2 text-black"><MessageSquare className="w-5 h-5 text-green-600" /> Ask a Question</CardTitle><CardDescription>Submit anonymous questions to leadership.</CardDescription></CardHeader>
-          <CardContent className="space-y-4 flex-1 flex flex-col pt-6">
-            <Textarea placeholder="Type your question here..." value={question} onChange={(e) => setQuestion(e.target.value)} className="resize-none border-gray-200 focus-visible:ring-green-600 rounded-xl flex-1 min-h-[150px] text-black font-medium" />
-            <Button onClick={handleSubmitQuestion} disabled={!question.trim() || isSubmittingQuestion} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md py-6">
+        
+        {/* Ask a Question Card */}
+        <Card className="border-green-200 shadow-sm h-full flex flex-col bg-white rounded-3xl overflow-hidden">
+          <CardHeader className="flex-none border-b border-gray-100 p-6 bg-gray-50/50">
+            <CardTitle className="flex items-center gap-2 text-black font-bold"><MessageSquare className="w-5 h-5 text-green-600" /> Ask a Question</CardTitle>
+            <CardDescription className="mt-1">Submit anonymous questions to leadership.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 flex-1 flex flex-col p-6">
+            <Textarea placeholder="Type your question here..." value={question} onChange={(e) => setQuestion(e.target.value)} className="resize-none border-gray-200 focus-visible:ring-green-600 rounded-2xl flex-1 min-h-[150px] text-black font-medium p-4 shadow-sm" />
+            <Button onClick={handleSubmitQuestion} disabled={!question.trim() || isSubmittingQuestion} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md py-6 transition-all">
               {isSubmittingQuestion ? "Sending..." : "Submit Question"}
             </Button>
           </CardContent>
         </Card>
+
+        {/* Upcoming Events Feed */}
+        <Card className="border-green-200 shadow-sm bg-white h-full flex flex-col rounded-3xl overflow-hidden">
+          <CardHeader className="pb-4 border-b border-gray-100 bg-gray-50/50 rounded-t-xl flex-none p-6">
+            <CardTitle className="flex items-center gap-2 text-lg text-black font-bold"><Calendar className="w-5 h-5 text-green-600" /> Upcoming Gatherings</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 flex-1 overflow-y-auto space-y-4 custom-scrollbar max-h-[400px]">
+            {upcomingEvents.length > 0 ? (upcomingEvents.map(event => {
+              const eventDate = new Date(event.event_date);
+              return (
+                <div key={event.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-200 transition-all flex flex-col sm:flex-row overflow-hidden group">
+                  {event.image_url ? (
+                    <div className="w-full sm:w-32 h-32 sm:h-auto relative overflow-hidden bg-gray-100 shrink-0"><img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /><div className="absolute top-2 right-2 sm:hidden bg-white/95 px-2 py-1 rounded-xl text-center shadow-sm"><p className="text-[10px] font-bold text-green-700 uppercase leading-none mb-0.5">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p><p className="text-sm font-black leading-none">{eventDate.getDate()}</p></div></div>
+                  ) : (
+                    <div className="w-full sm:w-32 h-16 sm:h-auto bg-green-50/50 flex items-center justify-center border-b sm:border-b-0 sm:border-r border-gray-100 shrink-0"><div className="bg-white px-3 py-1.5 rounded-xl shadow-sm text-center border border-gray-100"><p className="text-[9px] font-bold text-green-700 uppercase leading-none">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p><p className="text-sm font-black leading-none mt-0.5">{eventDate.getDate()}</p></div></div>
+                  )}
+                  <div className="p-4 flex flex-col flex-1 min-w-0">
+                    <h4 className="font-bold text-black text-sm sm:text-base mb-1.5 truncate">{event.title}</h4>
+                    {event.description && <p className="text-xs text-gray-500 mb-4 line-clamp-2">{event.description}</p>}
+                    <div className="mt-auto pt-2 border-t border-gray-50">
+                      {event.location && <a href={event.location.startsWith('http') ? event.location : `https://maps.google.com/?q=${event.location}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700 text-xs font-bold py-2.5 rounded-xl transition-all border border-gray-100"><MapPin className="w-4 h-4" /> Open in Maps</a>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })) : (<div className="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200"><p className="text-gray-400 italic text-sm">No upcoming events right now.</p></div>)}
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="space-y-4 pt-6 border-t border-gray-200">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="space-y-4 pt-8 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
           <h2 className="text-2xl font-black text-black flex items-center gap-2"><Users className="w-6 h-6 text-green-600" /> Household Overview</h2>
           <Dialog open={isAddChildOpen} onOpenChange={setIsAddChildOpen}>
-            <DialogTrigger asChild><Button className="bg-black hover:bg-gray-800 text-white font-bold w-full sm:w-auto shadow-md rounded-xl"><UserPlus className="w-4 h-4 mr-2" /> Add Child to Family</Button></DialogTrigger>
-            <DialogContent className="bg-white border border-green-100 rounded-2xl">
-              <DialogHeader><DialogTitle className="text-black font-bold">Add Child to Family</DialogTitle></DialogHeader>
-              <div className="space-y-3 py-4">
-                <Input placeholder="Child's Full Name" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} className="border-gray-200 text-black font-medium" />
-                <Input placeholder="Email (e.g. child@family.com)" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} className="border-gray-200 text-black font-medium" />
-                <Input placeholder="Password" type="password" value={newMember.password} onChange={e => setNewMember({...newMember, password: e.target.value})} className="border-gray-200 text-black font-medium" />
+            <DialogTrigger asChild><Button className="bg-black hover:bg-gray-800 text-white font-bold w-full sm:w-auto shadow-md rounded-xl h-11 transition-all"><UserPlus className="w-4 h-4 mr-2" /> Add Child to Family</Button></DialogTrigger>
+            <DialogContent className="bg-white border border-green-100 rounded-3xl p-6 sm:p-8">
+              <DialogHeader><DialogTitle className="text-black font-black text-xl mb-2">Add Child to Family</DialogTitle></DialogHeader>
+              <div className="space-y-4 py-4">
+                <Input placeholder="Child's Full Name" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
+                <Input placeholder="Email (e.g. child@family.com)" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
+                <Input placeholder="Password" type="password" value={newMember.password} onChange={e => setNewMember({...newMember, password: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
               </div>
-              <DialogFooter><Button onClick={handleRegisterMember} disabled={isRegistering} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md font-bold rounded-xl">{isRegistering ? "Processing..." : "Create Account"}</Button></DialogFooter>
+              <DialogFooter><Button onClick={handleRegisterMember} disabled={isRegistering} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md font-bold rounded-xl h-12 transition-all">{isRegistering ? "Processing..." : "Create Account"}</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
 
-        <Card className="border-green-200 shadow-sm bg-white">
-          <CardHeader className="border-b border-gray-100 pb-4"><CardTitle className="text-lg text-black">Household Progress Overview</CardTitle><CardDescription>Track readings and quizzes completed by everyone in the family for the active study book</CardDescription></CardHeader>
-          <CardContent className="h-[300px] pt-6">
+        <Card className="border-green-200 shadow-sm bg-white rounded-3xl overflow-hidden">
+          <CardHeader className="border-b border-gray-100 p-6 bg-gray-50/50">
+            <CardTitle className="text-lg text-black font-bold">Household Progress Overview</CardTitle>
+            <CardDescription className="mt-1">Track readings and quizzes completed by everyone in the family</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px] p-6">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid vertical={false} stroke="#f0fdf4" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0'}} />
+                <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
                 <Bar dataKey="readings" fill="#16a34a" radius={[4, 4, 0, 0]} name="Readings Done" maxBarSize={50} />
                 <Bar dataKey="quizzes" fill="#000000" radius={[4, 4, 0, 0]} name="Quizzes Taken" maxBarSize={50} />
               </BarChart>
@@ -341,47 +362,47 @@ export function ParentDashboard() {
           </CardContent>
         </Card>
         
-        {/* REPLACED INDIVIDUAL CARDS WITH A CLEAN MEMBER LIST CARD */}
-        <Card className="border-green-200 shadow-sm bg-white overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 pb-4">
-            <CardTitle className="text-lg text-black">Family Members List</CardTitle>
-            <CardDescription>All registered members belonging to {familyName}</CardDescription>
+        {/* Family Members List Card */}
+        <Card className="border-green-200 shadow-sm bg-white rounded-3xl overflow-hidden">
+          <CardHeader className="bg-gray-50/50 border-b border-gray-100 p-6">
+            <CardTitle className="text-lg text-black font-bold">Family Members List</CardTitle>
+            <CardDescription className="mt-1">All registered members belonging to {familyName}</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 uppercase text-[10px] tracking-wider">
+                <thead className="bg-white border-b border-gray-100 text-gray-400 uppercase text-[10px] tracking-widest font-bold">
                   <tr>
-                    <th className="p-4 font-bold">Member Name</th>
-                    <th className="p-4 font-bold">Email Address</th>
-                    <th className="p-4 font-bold">Role</th>
-                    <th className="p-4 font-bold text-right">Actions</th>
+                    <th className="p-5">Member Name</th>
+                    <th className="p-5">Email Address</th>
+                    <th className="p-5">Role</th>
+                    <th className="p-5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-50 bg-white">
                   {familyMembers.map(m => (
-                    <tr key={m.id} className="hover:bg-green-50/30 transition-colors">
-                      <td className="p-4 flex items-center gap-3">
+                    <tr key={m.id} className="hover:bg-green-50/50 transition-colors">
+                      <td className="p-4 sm:p-5 flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${m.role === 'parent' ? "bg-black text-white" : "bg-green-100 text-green-800"}`}>
                           {m.name[0]}
                         </div>
                         <span className="font-bold text-black">{m.name}</span>
                       </td>
-                      <td className="p-4 text-gray-500 font-mono text-xs">{m.email}</td>
-                      <td className="p-4">
+                      <td className="p-4 sm:p-5 text-gray-500 font-mono text-xs">{m.email}</td>
+                      <td className="p-4 sm:p-5">
                         {m.role === 'parent' ? (
-                          <Badge className="bg-black text-white border-none font-bold text-[10px]">Parent</Badge>
+                          <Badge className="bg-black text-white border-none font-bold text-[10px] rounded-md px-2 py-1">Parent</Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-white text-gray-600 border-gray-200 font-bold text-[10px]">Child</Badge>
+                          <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 font-bold text-[10px] rounded-md px-2 py-1">Child</Badge>
                         )}
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="p-4 sm:p-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50 font-bold text-xs" onClick={() => navigate(`/app/family-activities`)}>
+                          <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50 font-bold text-xs rounded-lg" onClick={() => navigate(`/app/family-activities`)}>
                             Progress
                           </Button>
                           {m.role !== 'parent' && (
-                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8" onClick={() => handleDeleteMember(m.id, m.name)} title="Remove Member">
+                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 rounded-lg" onClick={() => handleDeleteMember(m.id, m.name)} title="Remove Member">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           )}
@@ -407,60 +428,73 @@ export function ParentDashboard() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
+      
+      {/* SEPARATED WELCOME BANNER & DAILY VERSE CARDS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* REORGANIZED WELCOME BANNER (NO PROFILE BUTTON) */}
-        <div className="lg:col-span-2 bg-white rounded-xl p-6 sm:p-8 border border-green-200 shadow-sm flex flex-col justify-center relative overflow-hidden h-fit">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-black mb-3">Welcome Back, {currentUser?.name?.split(' ')[0] || "Parent"}!</h2>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-black text-white border-none px-3 py-1 font-bold shadow-none"><Shield className="w-3.5 h-3.5 mr-1 text-green-400" /> Parent</Badge>
-              {departmentName && <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200 font-bold">{departmentName} Dept</Badge>}
-              {isDeptHead && <Badge className="bg-green-600 text-white border-none capitalize font-bold">{currentUser?.department_role?.replace('_', ' ')}</Badge>}
-              {familyName && <Badge variant="outline" className="border-gray-200 text-black bg-gray-50 font-bold"><Users className="w-3.5 h-3.5 mr-1 text-green-600" /> {familyName} Family</Badge>}
+        {/* LEFT: Profile & Welcome Card */}
+        <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-green-200 shadow-sm flex flex-col sm:flex-row items-center sm:items-start lg:items-center gap-5 w-full">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-50 border-2 border-green-100 flex items-center justify-center shrink-0">
+            <span className="text-2xl sm:text-3xl font-bold text-green-700">{currentUser?.name?.charAt(0).toUpperCase()}</span>
+          </div>
+          <div className="w-full min-w-0 text-center sm:text-left">
+            <h2 className="text-xl sm:text-2xl font-bold text-black truncate">Welcome Back, {currentUser?.name?.split(' ')[0] || "Parent"}!</h2>
+            <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2 sm:mt-3">
+              <Badge className="bg-black text-white border-none px-2.5 py-1 font-medium shadow-none rounded-lg text-xs"><Shield className="w-3.5 h-3.5 mr-1 text-green-400" /> Parent</Badge>
+              {departmentName && <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200 font-medium rounded-lg text-xs px-2.5 py-1 truncate">{departmentName} Dept</Badge>}
+              {isDeptHead && <Badge className="bg-green-600 text-white border-none capitalize font-medium rounded-lg text-xs px-2.5 py-1">{currentUser?.department_role?.replace('_', ' ')}</Badge>}
+              {familyName && (
+                <Badge variant="outline" className="border-gray-200 text-gray-700 bg-gray-50 font-medium rounded-lg text-xs px-2.5 py-1 shadow-sm truncate">
+                  <Users className="w-3.5 h-3.5 mr-1.5 text-green-600 shrink-0" /> {familyName} Family
+                </Badge>
+              )}
             </div>
             <p className="text-gray-600 font-medium text-sm sm:text-base mt-3">Lead your household's spiritual journey today.</p>
           </div>
         </div>
 
-        <div className="lg:col-span-1">
-          <Card className="border-green-200 bg-white shadow-sm h-full flex flex-col min-h-[140px]">
-            <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-lg text-black"><BookOpen className="w-5 h-5 text-green-600" /> Daily Verse</CardTitle></CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-center">
-              <p className="text-base sm:text-lg font-medium italic mb-2 text-gray-800 leading-snug">"{dailyVerse.verse}"</p>
-              <p className="text-xs sm:text-sm font-bold text-green-700 uppercase tracking-wider">— {dailyVerse.reference}</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* RIGHT: Daily Verse Card */}
+        <Card className="lg:col-span-1 bg-white rounded-3xl border border-green-200 shadow-sm relative overflow-hidden flex flex-col justify-center">
+          <div className="absolute left-0 top-0 w-1.5 h-full bg-green-500"></div>
+          <CardContent className="p-6">
+            <p className="text-[10px] sm:text-xs font-semibold text-green-700 uppercase tracking-widest mb-2 flex items-center gap-2">
+              <BookText className="w-4 h-4" /> Verse of the Day
+            </p>
+            <p className="text-sm font-semibold text-gray-800 leading-relaxed italic mb-2">"{dailyVerse.verse}"</p>
+            <p className="text-xs font-medium text-gray-500">— {dailyVerse.reference}</p>
+          </CardContent>
+        </Card>
+
       </div>
 
+      {/* DUAL DASHBOARD TABS */}
       {departmentName ? (
-        <Tabs defaultValue="family" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-green-50 p-1.5 rounded-xl mb-6 border border-green-100 h-auto">
-            <TabsTrigger value="family" className="font-bold text-xs sm:text-sm md:text-base px-2 py-3 text-center truncate data-[state=active]:bg-white data-[state=active]:text-black shadow-sm">
+       <Tabs defaultValue="family" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-green-50 p-1.5 sm:p-2 rounded-2xl mb-8 border border-green-100 h-auto shadow-inner">
+            <TabsTrigger value="family" className="font-medium text-xs sm:text-sm md:text-base px-2 py-2.5 sm:py-3 text-center truncate data-[state=active]:bg-white data-[state=active]:text-black shadow-sm rounded-xl">
               Family & Personal
             </TabsTrigger>
-            <TabsTrigger value="department" className="font-bold text-xs sm:text-sm md:text-base px-2 py-3 text-center truncate data-[state=active]:bg-black data-[state=active]:text-white shadow-sm">
+            <TabsTrigger value="department" className="font-medium text-xs sm:text-sm md:text-base px-2 py-2.5 sm:py-3 text-center truncate data-[state=active]:bg-black data-[state=active]:text-white shadow-sm rounded-xl">
               Department Workspace
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="family" className="space-y-6">
+          <TabsContent value="family" className="space-y-6 animate-in fade-in duration-500">
             {familyDashboardContent}
           </TabsContent>
 
-          <TabsContent value="department" className="space-y-6 animate-in fade-in duration-500">
-            {departmentName?.includes("Education") && <EducationWorkspace />}
-            {departmentName?.includes("Finance") && <FinanceWorkspace />}
-            {departmentName?.includes("Media") && <MediaWorkspace />}
-            {departmentName?.includes("Saturday") && <SaturdayWorkspace />}
-            {departmentName?.includes("Relation") && <RelationWorkspace />}
+          <TabsContent value="department" className="animate-in fade-in duration-500">
+            {departmentName.includes("Education") && <EducationWorkspace />}
+            {departmentName.includes("Finance") && <FinanceWorkspace />}
+            {departmentName.includes("Media") && <MediaWorkspace />}
+            {departmentName.includes("Saturday") && <SaturdayWorkspace />}
+            {departmentName.includes("Relation") && <RelationWorkspace />}
 
             {(departmentName?.includes("Executive") || 
               departmentName?.includes("Leadership") || 
               departmentName?.includes("Secretarial") || 
               currentUser?.role === 'admin') && (
-              <div className="mt-12 pt-8 border-t-4 border-black">
+              <div className="mt-10 pt-8 border-t border-gray-200">
                 <LeadershipWorkspace />
               </div>
             )}
