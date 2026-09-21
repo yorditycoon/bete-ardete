@@ -91,7 +91,8 @@ export function QuizPage() {
   const isLastQuestion = currentQuestionIndex === (selectedQuiz?.questions?.length || 1) - 1;
   const isAlreadyCompleted = selectedQuiz && completedQuizzes[selectedQuiz?.id] !== undefined;
 
-  const handleStartQuiz = () => {
+  const handleStartQuiz = (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!selectedQuiz?.questions?.length) return toast.error("This quiz has no questions yet.");
     setQuizStarted(true);
     setCurrentQuestionIndex(0);
@@ -143,7 +144,8 @@ export function QuizPage() {
     }
   };
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (isLastQuestion) {
       handleSubmitQuiz();
     } else {
@@ -225,7 +227,8 @@ export function QuizPage() {
                 return (
                   <div key={book.id} className={`rounded-xl border transition-all shadow-sm overflow-hidden shrink-0 ${isExpanded ? "border-green-300 bg-white" : "border-gray-200 bg-white hover:border-green-200"}`}>
                     <button 
-                      onClick={() => toggleFolder(book.id)} 
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); toggleFolder(book.id); }} 
                       className={`w-full flex items-center justify-between p-4 transition-colors ${isExpanded ? "bg-green-50/50" : "hover:bg-gray-50"}`}
                     >
                       <div className="flex items-center gap-3">
@@ -257,8 +260,10 @@ export function QuizPage() {
 
                             return (
                               <button
+                                type="button"
                                 key={quiz.id}
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.preventDefault();
                                   setSelectedQuiz(quiz);
                                   setQuizStarted(false);
                                   setQuizCompleted(false);
@@ -349,7 +354,7 @@ export function QuizPage() {
                         );
                       })}
                     </div>
-                    <Button onClick={() => setQuizCompleted(false)} variant="outline" className="mt-8 w-full border-green-200 text-green-700 hover:bg-green-50 font-bold py-6">
+                    <Button type="button" onClick={(e) => { e.preventDefault(); setQuizCompleted(false); }} variant="outline" className="mt-8 w-full border-green-200 text-green-700 hover:bg-green-50 font-bold py-6">
                       Finish Review
                     </Button>
                   </div>
@@ -389,7 +394,7 @@ export function QuizPage() {
                         You only get ONE chance to submit!
                       </span>
                     </p>
-                    <Button onClick={handleStartQuiz} className="bg-green-600 hover:bg-green-700 px-12 py-7 text-lg font-bold shadow-lg shadow-green-600/20 rounded-xl w-full sm:w-auto">
+                    <Button type="button" onClick={handleStartQuiz} className="bg-green-600 hover:bg-green-700 px-12 py-7 text-lg font-bold shadow-lg shadow-green-600/20 rounded-xl w-full sm:w-auto">
                       Start {getQuizTypeStyling(selectedQuiz?.quiz_type, false).label}
                     </Button>
                   </div>
@@ -424,10 +429,11 @@ export function QuizPage() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-gray-100 mt-auto">
-                      <Button variant="outline" onClick={() => setCurrentQuestionIndex(prev => prev - 1)} disabled={currentQuestionIndex === 0} className="border-gray-200 text-gray-600 font-bold py-6 sm:w-1/3">
+                      <Button type="button" variant="outline" onClick={(e) => { e.preventDefault(); setCurrentQuestionIndex(prev => prev - 1); }} disabled={currentQuestionIndex === 0} className="border-gray-200 text-gray-600 font-bold py-6 sm:w-1/3">
                         Previous
                       </Button>
                       <Button 
+                        type="button"
                         onClick={handleNextQuestion} 
                         disabled={selectedAnswers[currentQuestion?.id || ''] === undefined || isSaving}
                         className="bg-green-600 hover:bg-green-700 font-bold shadow-md py-6 sm:w-2/3 text-base"

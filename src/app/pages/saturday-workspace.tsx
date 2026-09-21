@@ -96,7 +96,7 @@ export function SaturdayWorkspace() {
         const { data: membersData } = await supabase.from('profiles').select('id, name, email, role').neq('role', 'admin').order('name', { ascending: true });
         setMembers(membersData || []);
 
-        // Load Events
+        // Load Events silently without full reload
         fetchEvents();
         
         channel = supabase.channel('saturday-realtime')
@@ -114,7 +114,7 @@ export function SaturdayWorkspace() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [navigate]);
 
-  // Load Events Helper
+  // Load Events Helper (Silent update)
   const fetchEvents = async () => {
     const { data: eventsData } = await supabase.from('events').select('*').order('event_date', { ascending: true });
     if (eventsData) setEvents(eventsData);
@@ -145,9 +145,15 @@ export function SaturdayWorkspace() {
 
   // --- ATTENDANCE HANDLERS ---
   const handleToggleAttendance = (userId: string) => setAttendance(prev => ({ ...prev, [userId]: !prev[userId] }));
-  const handleMarkAllPresent = () => { const allPresent: Record<string, boolean> = {}; members.forEach(m => { allPresent[m.id] = true; }); setAttendance(allPresent); };
+  const handleMarkAllPresent = (e?: React.SyntheticEvent) => { 
+    if (e) e.preventDefault();
+    const allPresent: Record<string, boolean> = {}; 
+    members.forEach(m => { allPresent[m.id] = true; }); 
+    setAttendance(allPresent); 
+  };
   
-  const handleSaveAttendance = async () => {
+  const handleSaveAttendance = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!saturdayServiceDept) return;
     setIsSaving(true);
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
@@ -162,7 +168,8 @@ export function SaturdayWorkspace() {
   };
 
   // --- EVENT HANDLERS ---
-  const handleSearchLocation = async () => {
+  const handleSearchLocation = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!mapSearchQuery.trim()) return;
     setIsSearchingMap(true);
     try {
@@ -180,7 +187,8 @@ export function SaturdayWorkspace() {
     } catch (error) { toast.error("Error searching for location."); } finally { setIsSearchingMap(false); }
   };
 
-  const handleAddEvent = async () => {
+  const handleAddEvent = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!newEvent.title || !newEvent.date || !newEvent.time) return toast.error("Fill all required fields");
     setIsUploading(true);
     
@@ -214,7 +222,8 @@ export function SaturdayWorkspace() {
     } catch (error: any) { toast.error("Failed to post event: " + error.message); } finally { setIsUploading(false); }
   };
 
-  const handleDeleteEvent = async (id: string) => {
+  const handleDeleteEvent = async (id: string, e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if(!confirm("Are you sure you want to delete this event?")) return;
     try {
       const { data: eventToDelete } = await supabase.from('events').select('image_url').eq('id', id).single();
@@ -335,10 +344,10 @@ export function SaturdayWorkspace() {
                       </CardDescription>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
-                      <Button variant="outline" size="sm" onClick={handleMarkAllPresent} disabled={isDateLoading} className="flex-1 sm:flex-none border-green-200 text-green-700 hover:bg-green-50 font-bold">
+                      <Button type="button" variant="outline" size="sm" onClick={handleMarkAllPresent} disabled={isDateLoading} className="flex-1 sm:flex-none border-green-200 text-green-700 hover:bg-green-50 font-bold">
                         All Present
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => setAttendance({})} disabled={isDateLoading} className="flex-1 sm:flex-none border-gray-200 text-gray-600 hover:bg-gray-50 font-bold">
+                      <Button type="button" variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setAttendance({}); }} disabled={isDateLoading} className="flex-1 sm:flex-none border-gray-200 text-gray-600 hover:bg-gray-50 font-bold">
                         Clear
                       </Button>
                     </div>
@@ -382,7 +391,7 @@ export function SaturdayWorkspace() {
                     </div>
                     
                     <div className="mt-4 pt-4 border-t border-gray-100 flex-none">
-                      <Button onClick={handleSaveAttendance} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-6 text-base sm:text-lg transition-all rounded-xl" disabled={isSaving || members.length === 0 || isDateLoading}>
+                      <Button type="button" onClick={handleSaveAttendance} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md py-6 text-base sm:text-lg transition-all rounded-xl" disabled={isSaving || members.length === 0 || isDateLoading}>
                         {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />} Save Attendance Record
                       </Button>
                     </div>
@@ -422,10 +431,11 @@ export function SaturdayWorkspace() {
                     <Clock className="w-4 h-4 text-green-600" /> Event Schedule Breakdown (Optional)
                   </Label>
                   <Button 
+                    type="button"
                     variant="outline" 
                     size="sm" 
                     className="h-8 text-xs border-green-200 text-green-700 hover:bg-green-50"
-                    onClick={() => setAgenda([...agenda, { time: "", activity: "" }])}
+                    onClick={(e) => { e.preventDefault(); setAgenda([...agenda, { time: "", activity: "" }]); }}
                   >
                     <Plus className="w-3 h-3 mr-1" /> Add Schedule Item
                   </Button>
@@ -456,10 +466,11 @@ export function SaturdayWorkspace() {
                           className="flex-1 bg-white border-green-200" 
                         />
                         <Button 
+                          type="button"
                           variant="ghost" 
                           size="icon" 
                           className="text-gray-400 hover:text-red-500 shrink-0 h-9 w-9"
-                          onClick={() => setAgenda(agenda.filter((_, i) => i !== index))}
+                          onClick={(e) => { e.preventDefault(); setAgenda(agenda.filter((_, i) => i !== index)); }}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -511,9 +522,9 @@ export function SaturdayWorkspace() {
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input placeholder="Search for an address, city, or landmark..." value={mapSearchQuery} onChange={(e) => setMapSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()} className="pl-9 border-green-200 focus-visible:ring-green-500" />
+                    <Input placeholder="Search for an address, city, or landmark..." value={mapSearchQuery} onChange={(e) => setMapSearchQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchLocation(); } }} className="pl-9 border-green-200 focus-visible:ring-green-500" />
                   </div>
-                  <Button onClick={handleSearchLocation} disabled={isSearchingMap} variant="outline" className="shrink-0 border-green-600 text-green-700 hover:bg-green-50">
+                  <Button type="button" onClick={handleSearchLocation} disabled={isSearchingMap} variant="outline" className="shrink-0 border-green-600 text-green-700 hover:bg-green-50">
                     {isSearchingMap ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search Map"}
                   </Button>
                 </div>
@@ -532,7 +543,7 @@ export function SaturdayWorkspace() {
                 <Textarea placeholder="Event Description..." value={newEvent.description} onChange={(e) => setNewEvent({...newEvent, description: e.target.value})} className="h-24 resize-none border-green-200 focus-visible:ring-green-500" />
               </div>
 
-              <Button onClick={handleAddEvent} disabled={isUploading} className="bg-black hover:bg-gray-800 text-white w-full py-6 text-lg font-bold shadow-md mt-4">
+              <Button type="button" onClick={handleAddEvent} disabled={isUploading} className="bg-black hover:bg-gray-800 text-white w-full py-6 text-lg font-bold shadow-md mt-4">
                 {isUploading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Uploading...</> : <><Plus className="w-5 h-5 mr-2" /> Post Event</>}
               </Button>
             </CardContent>
@@ -574,7 +585,7 @@ export function SaturdayWorkspace() {
                         </p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteEvent(event.id)}>
+                    <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDeleteEvent(event.id, e)}>
                       <Trash2 className="w-5 h-5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" />
                     </Button>
                   </div>

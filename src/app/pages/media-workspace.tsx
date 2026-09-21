@@ -66,11 +66,12 @@ export function MediaWorkspace() {
         const savedDrives = localStorage.getItem("media_drives");
         if (savedDrives) setDriveLinks(JSON.parse(savedDrives));
 
-        await fetchData();
+        await fetchData(true); // Pass true for initial load to show spinner
 
+        // Silent background refresh on changes
         channel = supabase.channel('media-realtime')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'media_shifts' }, () => { fetchData(); })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'media_archives' }, () => { fetchData(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'media_shifts' }, () => { fetchData(false); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'media_archives' }, () => { fetchData(false); })
           .subscribe();
 
       } catch (error) {
@@ -82,8 +83,8 @@ export function MediaWorkspace() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [navigate]);
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const fetchData = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const [ { data: shiftsData }, { data: archivesData }, { data: membersData } ] = await Promise.all([
         supabase.from('media_shifts').select('*').order('shift_date', { ascending: true }),
@@ -98,48 +99,60 @@ export function MediaWorkspace() {
     } catch (error) {
       toast.error("Failed to sync media data");
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
   // --- LOCAL HANDLERS (Drives) ---
   const saveDrivesLocally = (newDrives: DriveLink[]) => { setDriveLinks(newDrives); localStorage.setItem("media_drives", JSON.stringify(newDrives)); };
-  const handleAddDrive = () => {
+  
+  const handleAddDrive = (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!newDriveName.trim() || !newDriveUrl.trim()) return;
     saveDrivesLocally([...driveLinks, { id: Date.now().toString(), name: newDriveName, url: newDriveUrl }]);
     setNewDriveName(""); setNewDriveUrl("");
   };
-  const handleDeleteDrive = (id: string) => saveDrivesLocally(driveLinks.filter(d => d.id !== id));
+  
+  const handleDeleteDrive = (id: string, e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
+    saveDrivesLocally(driveLinks.filter(d => d.id !== id));
+  };
 
   // --- DB HANDLERS (Shifts & Archives) ---
-  const handleAddShift = async () => {
+  const handleAddShift = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!eventName || !shiftDate || !shiftTime || !roleName) return toast.error("Please fill in all required shift details.");
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from('media_shifts').insert([{ event_name: eventName, shift_date: shiftDate, shift_time: shiftTime, role_name: roleName, assigned_to: assignedTo }]);
       if (error) throw error;
       toast.success("Shift scheduled successfully!");
-      setEventName(""); setShiftDate(""); setShiftTime(""); setRoleName(""); setAssignedTo("Unassigned"); fetchData();
+      setEventName(""); setShiftDate(""); setShiftTime(""); setRoleName(""); setAssignedTo("Unassigned"); 
+      fetchData(false);
     } catch (error: any) { toast.error(error.message); } finally { setIsSubmitting(false); }
   };
 
-  const handleAddArchive = async () => {
+  const handleAddArchive = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!archiveTitle || !archiveDate || !archiveUrl) return toast.error("Please fill in all archive details.");
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from('media_archives').insert([{ title: archiveTitle, archive_date: archiveDate, file_url: archiveUrl, asset_type: assetType }]);
       if (error) throw error;
       toast.success("Asset archived successfully!");
-      setArchiveTitle(""); setArchiveDate(""); setArchiveUrl(""); setAssetType("video"); fetchData();
+      setArchiveTitle(""); setArchiveDate(""); setArchiveUrl(""); setAssetType("video"); 
+      fetchData(false);
     } catch (error: any) { toast.error(error.message); } finally { setIsSubmitting(false); }
   };
 
-  const handleDelete = async (table: string, id: string) => {
+  const handleDelete = async (table: string, id: string, e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!confirm("Are you sure you want to delete this record?")) return;
     try {
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) throw error;
-      toast.success("Record deleted."); fetchData();
+      toast.success("Record deleted."); 
+      fetchData(false);
     } catch (error: any) { toast.error(error.message); }
   };
 
@@ -198,7 +211,7 @@ export function MediaWorkspace() {
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Input placeholder="Folder Name (e.g. Sunday Photos)" value={newDriveName} onChange={(e) => setNewDriveName(e.target.value)} className="bg-white border-green-200 flex-1" />
                       <Input placeholder="https://drive.google.com/..." value={newDriveUrl} onChange={(e) => setNewDriveUrl(e.target.value)} className="bg-white border-green-200 flex-1" />
-                      <Button onClick={handleAddDrive} className="bg-black hover:bg-gray-800 text-white shrink-0"><Plus className="w-4 h-4" /></Button>
+                      <Button type="button" onClick={handleAddDrive} className="bg-black hover:bg-gray-800 text-white shrink-0"><Plus className="w-4 h-4" /></Button>
                     </div>
                   </div>
                 )}
@@ -224,7 +237,7 @@ export function MediaWorkspace() {
                           </div>
                         </div>
                         {isMediaHead && (
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteDrive(drive.id)} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-600 transition-all shrink-0">
+                          <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDeleteDrive(drive.id, e)} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-600 transition-all shrink-0">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         )}
@@ -291,7 +304,7 @@ export function MediaWorkspace() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button onClick={handleAddShift} disabled={isSubmitting} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md mt-2">
+                    <Button type="button" onClick={handleAddShift} disabled={isSubmitting} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md mt-2">
                       {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} Add to Schedule
                     </Button>
                   </CardContent>
@@ -340,7 +353,7 @@ export function MediaWorkspace() {
                                 <span className={`font-bold ${isMyShift ? "text-green-700" : "text-black"}`}>{shift.assigned_to}</span>
                               </div>
                               {isMediaHead && (
-                                <Button variant="ghost" size="icon" onClick={() => handleDelete('media_shifts', shift.id)} className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8">
+                                <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDelete('media_shifts', shift.id, e)} className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8">
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               )}
@@ -395,7 +408,7 @@ export function MediaWorkspace() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button onClick={handleAddArchive} disabled={isSubmitting} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md mt-2">
+                    <Button type="button" onClick={handleAddArchive} disabled={isSubmitting} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold shadow-md mt-2">
                       {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} Save to Archive
                     </Button>
                   </CardContent>
@@ -430,7 +443,7 @@ export function MediaWorkspace() {
                                 {isVideo ? <Video className="w-6 h-6" /> : isAudio ? <Headphones className="w-6 h-6" /> : <Settings2 className="w-6 h-6" />}
                               </div>
                               {isMediaHead && (
-                                <Button variant="ghost" size="icon" onClick={() => handleDelete('media_archives', archive.id)} className="h-8 w-8 text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100">
+                                <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDelete('media_archives', archive.id, e)} className="h-8 w-8 text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100">
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               )}

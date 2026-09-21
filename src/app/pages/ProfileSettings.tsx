@@ -67,7 +67,8 @@ export function ProfileSettings() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!userId) return;
     
     try {
@@ -245,6 +246,7 @@ export function ProfileSettings() {
           {/* RESPONSIVE BUTTON */}
           <div className="pt-4 sm:pt-6 flex justify-end">
             <Button 
+              type="button"
               onClick={handleSave} 
               disabled={isSaving}
               className="w-full sm:w-auto bg-green-600 hover:bg-green-700 font-bold text-white px-6 py-5 sm:px-8 sm:py-6 shadow-md transition-all text-sm sm:text-base"

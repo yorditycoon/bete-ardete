@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
-import { MessageSquare, Send, Loader2, User, Trash2 } from "lucide-react"; // Added Trash2
+import { MessageSquare, Send, Loader2, User, Trash2 } from "lucide-react"; 
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
 
@@ -19,20 +19,22 @@ export function QuestionsPage() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const isAdmin = currentUser.role === "admin";
 
-useEffect(() => {
-    fetchQuestions();
+  useEffect(() => {
+    fetchQuestions(true); // Initial load shows spinner
 
     // Listen for any changes to the questions table
     const channel = supabase.channel('questions-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'anoquestions' }, () => {
-        fetchQuestions(); // Refresh instantly!
+        fetchQuestions(false); // Silent background refresh!
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, []);
-  async function fetchQuestions() {
-    setIsLoading(true);
+
+  async function fetchQuestions(isInitial = false) {
+    if (isInitial) setIsLoading(true);
+    
     const { data, error } = await supabase
       .from("anoquestions")
       .select("*")
@@ -43,10 +45,12 @@ useEffect(() => {
     } else {
       setQuestions(data || []);
     }
-    setIsLoading(false);
+    
+    if (isInitial) setIsLoading(false);
   }
 
-  const handleSubmitQuestion = async () => {
+  const handleSubmitQuestion = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!newQuestion.trim()) return;
     setIsSubmitting(true);
 
@@ -63,12 +67,13 @@ useEffect(() => {
     } else {
       toast.success("Question submitted anonymously!");
       setNewQuestion("");
-      fetchQuestions(); 
+      fetchQuestions(false); 
     }
     setIsSubmitting(false);
   };
 
-  const handleAnswerSubmit = async (questionId: string) => {
+  const handleAnswerSubmit = async (questionId: string, e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     const text = answerText[questionId];
     if (!text?.trim()) return;
 
@@ -85,12 +90,13 @@ useEffect(() => {
     } else {
       toast.success("Answer posted!");
       setAnswerText(prev => ({ ...prev, [questionId]: "" }));
-      fetchQuestions();
+      fetchQuestions(false);
     }
   };
 
-  // --- NEW: DELETE QUESTION FUNCTION (ADMIN ONLY) ---
-  const handleDeleteQuestion = async (questionId: string) => {
+  // --- DELETE QUESTION FUNCTION (ADMIN ONLY) ---
+  const handleDeleteQuestion = async (questionId: string, e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     const confirmed = window.confirm("Are you sure you want to delete this question? This action cannot be undone.");
     if (!confirmed) return;
 
@@ -103,7 +109,7 @@ useEffect(() => {
       if (error) throw error;
 
       toast.success("Question deleted successfully.");
-      // Update UI immediately
+      // Update UI immediately without waiting for realtime
       setQuestions((prev) => prev.filter((q) => q.id !== questionId));
     } catch (error: any) {
       toast.error("Failed to delete question: " + error.message);
@@ -155,6 +161,7 @@ useEffect(() => {
                 🔒 Your identity is protected and hidden from church leadership.
               </p>
               <Button 
+                type="button"
                 onClick={handleSubmitQuestion} 
                 disabled={isSubmitting || !newQuestion.trim()}
                 className="bg-green-600 hover:bg-green-700 font-bold px-6 shadow-md w-full sm:w-auto"
@@ -171,10 +178,11 @@ useEffect(() => {
       <div className="flex flex-wrap gap-2 p-1 bg-gray-100/80 w-fit rounded-lg border border-gray-200">
         {["all", "answered", "pending"].map((f) => (
           <Button
+            type="button"
             key={f}
             variant={filter === f ? "default" : "ghost"}
             size="sm"
-            onClick={() => setFilter(f as any)}
+            onClick={(e) => { e.preventDefault(); setFilter(f as any); }}
             className={filter === f ? "bg-white text-green-700 shadow-sm hover:bg-white font-bold" : "text-gray-500 font-medium"}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -221,9 +229,10 @@ useEffect(() => {
                     {/* Delete button only shows for Admins */}
                     {isAdmin && (
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteQuestion(q.id)}
+                        onClick={(e) => handleDeleteQuestion(q.id, e)}
                         className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 transition-colors"
                         title="Delete Question"
                       >
@@ -254,8 +263,9 @@ useEffect(() => {
                     />
                     <div className="flex justify-end">
                       <Button 
+                        type="button"
                         size="sm" 
-                        onClick={() => handleAnswerSubmit(q.id)} 
+                        onClick={(e) => handleAnswerSubmit(q.id, e)} 
                         disabled={!answerText[q.id]?.trim()} 
                         className="bg-green-600 hover:bg-green-700 font-bold px-6 shadow-sm w-full sm:w-auto"
                       >
