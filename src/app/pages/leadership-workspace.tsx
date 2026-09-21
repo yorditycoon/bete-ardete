@@ -61,11 +61,13 @@ export function LeadershipWorkspace() {
           return navigate("/app");
         }
 
-        await fetchGlobalMetrics();
+        await fetchGlobalMetrics(true); // Initial load with spinner
 
         // Listen for live updates across ALL tasks
         channel = supabase.channel('executive-realtime')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'department_tasks' }, () => { fetchGlobalMetrics(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'department_tasks' }, () => { 
+            fetchGlobalMetrics(false); // Silent background refresh
+          })
           .subscribe();
 
       } catch (error) {
@@ -77,8 +79,8 @@ export function LeadershipWorkspace() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [navigate]);
 
-  const fetchGlobalMetrics = async () => {
-    setIsLoading(true);
+  const fetchGlobalMetrics = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const [
         memberRes,
@@ -136,7 +138,7 @@ export function LeadershipWorkspace() {
       console.error(error);
       toast.error("Failed to load executive metrics.");
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
@@ -229,6 +231,7 @@ export function LeadershipWorkspace() {
         </div>
         <div className="flex items-center gap-3">
           <Button 
+            type="button"
             onClick={handleDownloadReport} 
             className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-md transition-all flex items-center gap-2"
           >

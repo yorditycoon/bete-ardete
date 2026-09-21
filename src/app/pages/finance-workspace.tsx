@@ -50,10 +50,13 @@ export function FinanceWorkspace() {
           return navigate("/app");
         }
 
-        await fetchData();
+        await fetchData(true); // Initial load shows spinner
 
+        // Realtime Listener silently updates in background
         channel = supabase.channel('finance-realtime')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => { fetchData(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => { 
+            fetchData(false); // Silent fetch
+          })
           .subscribe();
 
       } catch (error) {
@@ -65,8 +68,8 @@ export function FinanceWorkspace() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [navigate]);
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const fetchData = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const [ { data: txData }, { data: membersData } ] = await Promise.all([
         supabase.from('transactions').select('*, profiles(name)').order('transaction_date', { ascending: false }).order('created_at', { ascending: false }),
@@ -78,11 +81,12 @@ export function FinanceWorkspace() {
     } catch (error) {
       toast.error("Failed to sync financial data");
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
-  const handleAddTransaction = async () => {
+  const handleAddTransaction = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return toast.error("Please enter a valid amount.");
     if (!description.trim()) return toast.error("Description is required.");
     if (!transactionDate) return toast.error("Date is required.");
@@ -103,7 +107,8 @@ export function FinanceWorkspace() {
       setAmount("");
       setDescription("");
       setSelectedMember("none");
-      fetchData();
+      // Rely on realtime listener to fetch data, or force silent fetch
+      fetchData(false);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -111,13 +116,14 @@ export function FinanceWorkspace() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!confirm("Are you sure you want to delete this transaction record? This affects the master ledger.")) return;
     try {
       const { error } = await supabase.from('transactions').delete().eq('id', id);
       if (error) throw error;
       toast.success("Transaction removed.");
-      fetchData();
+      fetchData(false);
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -262,12 +268,14 @@ export function FinanceWorkspace() {
                   
                   <div className="flex bg-gray-100 p-1 rounded-lg">
                     <button 
+                      type="button"
                       onClick={() => setTransactionType("income")} 
                       className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${transactionType === "income" ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                     >
                       Collection / Income
                     </button>
                     <button 
+                      type="button"
                       onClick={() => setTransactionType("expense")} 
                       className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${transactionType === "expense" ? "bg-black text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                     >
@@ -320,6 +328,7 @@ export function FinanceWorkspace() {
                   </div>
 
                   <Button 
+                    type="button"
                     onClick={handleAddTransaction} 
                     disabled={isSubmitting} 
                     className={`w-full py-6 font-bold shadow-md text-white ${transactionType === "income" ? "bg-green-600 hover:bg-green-700" : "bg-black hover:bg-gray-800"}`}
@@ -376,7 +385,7 @@ export function FinanceWorkspace() {
                                 {isIncome ? "+" : "-"} AED {Number(tx.amount).toLocaleString()}
                               </p>
                               {isFinanceHead && (
-                                <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)} className="h-8 w-8 text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDelete(tx.id, e)} className="h-8 w-8 text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               )}

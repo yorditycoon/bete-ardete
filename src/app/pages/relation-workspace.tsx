@@ -57,12 +57,13 @@ export function RelationWorkspace() {
           return navigate("/app");
         }
 
-        await fetchData();
+        await fetchData(true); // Initial load with spinner
 
+        // Silent background refresh on changes
         channel = supabase.channel('relation-realtime')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => { fetchData(); })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'families' }, () => { fetchData(); })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, () => { fetchData(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => { fetchData(false); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'families' }, () => { fetchData(false); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, () => { fetchData(false); })
           .subscribe();
 
       } catch (error) {
@@ -74,8 +75,8 @@ export function RelationWorkspace() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [navigate]);
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const fetchData = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const [ 
         { data: profData }, 
@@ -99,14 +100,15 @@ export function RelationWorkspace() {
     } catch (error) {
       toast.error("Failed to sync relations data");
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
   const availableParents = allProfiles.filter(u => u.role === "parent" && !u.family_id);
   const getFamilyMembers = (familyId: string) => allProfiles.filter(u => u.family_id === familyId);
 
-  const handleCreateParent = async () => {
+  const handleCreateParent = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!newParent.name || !newParent.email || !newParent.password) return toast.error("Please fill in all fields");
     if (newParent.password.length < 6) return toast.error("Password must be at least 6 characters");
 
@@ -124,7 +126,7 @@ export function RelationWorkspace() {
       toast.success(`Account created for ${newParent.name}!`);
       setNewParent({ name: "", email: "", password: "" });
       setShowCreateParent(false);
-      fetchData(); 
+      fetchData(false); 
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -146,6 +148,7 @@ export function RelationWorkspace() {
   };
 
   const handleUnassignParent = async (parentId: string, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!confirm("Remove this parent from the family? They will be moved back to unassigned parents.")) return;
     try {
@@ -157,6 +160,7 @@ export function RelationWorkspace() {
   };
 
   const handleDeleteParent = async (parentId: string, parentName: string, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!confirm(`Are you sure you want to PERMANENTLY delete the account for ${parentName}? This action cannot be undone.`)) return;
     try {
@@ -178,7 +182,8 @@ export function RelationWorkspace() {
     } catch (error: any) { toast.error(error.message); }
   };
 
-  const handleCreateFamily = async () => {
+  const handleCreateFamily = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!newFamily.name.trim()) return toast.error("Family name cannot be empty");
     try {
       setIsSubmitting(true);
@@ -390,7 +395,7 @@ export function RelationWorkspace() {
                             )}
                           </td>
                           <td className="p-4 sm:p-5 text-right space-x-2">
-                            <button onClick={() => setSelectedProfile(profile)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-green-200 text-green-800 hover:bg-green-50 font-bold rounded-xl transition-colors text-xs shadow-sm">
+                            <button type="button" onClick={() => setSelectedProfile(profile)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-green-200 text-green-800 hover:bg-green-50 font-bold rounded-xl transition-colors text-xs shadow-sm">
                               <Eye className="w-3.5 h-3.5" /> View
                             </button>
                             {profile.email && (
@@ -418,10 +423,10 @@ export function RelationWorkspace() {
             </div>
             {isRelationHead && (
               <div className="flex flex-wrap gap-3">
-                <button onClick={() => setShowCreateParent(true)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-green-200 text-black rounded-xl hover:bg-green-50 transition-all font-bold shadow-sm text-sm">
+                <button type="button" onClick={() => setShowCreateParent(true)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-green-200 text-black rounded-xl hover:bg-green-50 transition-all font-bold shadow-sm text-sm">
                   <UserCheck className="w-4 h-4 text-green-600" /> New Parent
                 </button>
-                <button onClick={() => setShowCreateFamily(true)} className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all font-bold shadow-sm text-sm">
+                <button type="button" onClick={() => setShowCreateFamily(true)} className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all font-bold shadow-sm text-sm">
                   <Plus className="w-4 h-4" /> New Family
                 </button>
               </div>
@@ -480,10 +485,10 @@ export function RelationWorkspace() {
                                 <div className="flex items-center gap-1 shrink-0">
                                   {isRelationHead && member.role === 'parent' && (
                                     <>
-                                      <button onClick={(e) => handleUnassignParent(member.id, e)} className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Unassign Parent">
+                                      <button type="button" onClick={(e) => handleUnassignParent(member.id, e)} className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Unassign Parent">
                                         <UserMinus className="w-4 h-4" />
                                       </button>
-                                      <button onClick={(e) => handleDeleteParent(member.id, member.name, e)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Parent Account">
+                                      <button type="button" onClick={(e) => handleDeleteParent(member.id, member.name, e)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Parent Account">
                                         <Trash2 className="w-4 h-4" />
                                       </button>
                                     </>
@@ -497,10 +502,10 @@ export function RelationWorkspace() {
 
                       {isRelationHead && (
                         <div className="flex gap-2 pt-2">
-                          <button onClick={(e) => { e.stopPropagation(); setSelectedFamilyId(family.id); setShowAssignParent(true); }} className="flex-1 py-2.5 bg-white border border-green-200 text-green-700 rounded-xl text-xs font-bold hover:bg-green-50 transition-colors shadow-sm">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedFamilyId(family.id); setShowAssignParent(true); }} className="flex-1 py-2.5 bg-white border border-green-200 text-green-700 rounded-xl text-xs font-bold hover:bg-green-50 transition-colors shadow-sm">
                             Assign Parent
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteFamily(family.id); }} className="p-2.5 text-red-400 hover:text-red-600 transition-colors rounded-xl hover:bg-red-50 border border-red-100" title="Delete Family">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteFamily(family.id); }} className="p-2.5 text-red-400 hover:text-red-600 transition-colors rounded-xl hover:bg-red-50 border border-red-100" title="Delete Family">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -516,13 +521,13 @@ export function RelationWorkspace() {
       </Tabs>
 
       {/* --- MODALS --- */}
-{/* Member Details Modal (Centered with side-by-side header) */}
+      {/* Member Details Modal (Centered with side-by-side header) */}
       {selectedProfile && (
         <div className="fixed inset-x-0 bottom-0 top-16 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[50] p-6 sm:p-12">
           
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-2xl border border-gray-100 relative overflow-hidden flex flex-col max-h-full animate-in fade-in zoom-in-95 duration-200">
             
-            <button onClick={() => setSelectedProfile(null)} className="absolute top-4 right-4 p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-900 rounded-full transition-colors z-10">
+            <button type="button" onClick={() => setSelectedProfile(null)} className="absolute top-4 right-4 p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-900 rounded-full transition-colors z-10">
                <X className="w-5 h-5" />
             </button>
             
@@ -599,12 +604,13 @@ export function RelationWorkspace() {
 
             </div>
 
-            <button onClick={() => setSelectedProfile(null)} className="w-full mt-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-md shrink-0">
+            <button type="button" onClick={() => setSelectedProfile(null)} className="w-full mt-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-md shrink-0">
               Close Profile
             </button>
           </div>
         </div>
       )}
+      
       {/* Create Parent Modal */}
       {showCreateParent && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
@@ -625,8 +631,8 @@ export function RelationWorkspace() {
                 <input type="password" value={newParent.password} onChange={(e) => setNewParent({ ...newParent, password: e.target.value })} placeholder="At least 6 characters" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-sm font-medium" />
               </div>
               <div className="flex gap-3 pt-4">
-                <button onClick={() => setShowCreateParent(false)} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-50 border border-gray-200 rounded-xl transition-all">Cancel</button>
-                <button onClick={handleCreateParent} disabled={isSubmitting} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition-all">
+                <button type="button" onClick={() => setShowCreateParent(false)} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-50 border border-gray-200 rounded-xl transition-all">Cancel</button>
+                <button type="button" onClick={handleCreateParent} disabled={isSubmitting} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition-all">
                   {isSubmitting ? "Processing..." : "Create Account"}
                 </button>
               </div>
@@ -653,10 +659,10 @@ export function RelationWorkspace() {
                       <p className="text-[10px] text-gray-500 font-mono truncate">{parent.email}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <button onClick={() => handleAssignParent(parent.id)} className="p-2 bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors rounded-xl" title="Assign to Family">
+                      <button type="button" onClick={() => handleAssignParent(parent.id)} className="p-2 bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors rounded-xl" title="Assign to Family">
                         <UserCheck className="w-4 h-4" />
                       </button>
-                      <button onClick={(e) => handleDeleteParent(parent.id, parent.name, e)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors rounded-xl" title="Delete Parent Account">
+                      <button type="button" onClick={(e) => handleDeleteParent(parent.id, parent.name, e)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors rounded-xl" title="Delete Parent Account">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -664,7 +670,7 @@ export function RelationWorkspace() {
                 ))
               )}
             </div>
-            <button onClick={() => { setShowAssignParent(false); setSelectedFamilyId(""); }} className="w-full mt-6 py-3.5 border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-all shrink-0">Close</button>
+            <button type="button" onClick={() => { setShowAssignParent(false); setSelectedFamilyId(""); }} className="w-full mt-6 py-3.5 border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-all shrink-0">Close</button>
           </div>
         </div>
       )}
@@ -678,8 +684,8 @@ export function RelationWorkspace() {
             <div className="space-y-4">
               <input type="text" value={newFamily.name} onChange={(e) => setNewFamily({ name: e.target.value })} placeholder="Family Name (e.g. The Abraham's)" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-black text-sm font-medium" />
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowCreateFamily(false)} className="flex-1 py-3 border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-all">Cancel</button>
-                <button onClick={handleCreateFamily} disabled={isSubmitting} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition-all">
+                <button type="button" onClick={() => setShowCreateFamily(false)} className="flex-1 py-3 border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-all">Cancel</button>
+                <button type="button" onClick={handleCreateFamily} disabled={isSubmitting} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition-all">
                   {isSubmitting ? "Creating..." : "Create"}
                 </button>
               </div>
