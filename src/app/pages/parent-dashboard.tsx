@@ -2,15 +2,18 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "../components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Textarea } from "../components/ui/textarea";
 import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Label } from "../components/ui/label";
 import { 
   Users, UserPlus, Loader2, Calendar, BookMarked, CheckCircle, 
   Unlock, Lock, Trophy, BookOpen, Trash2, MapPin, MessageSquare, 
-  UserCheck, Shield, BookText
+  UserCheck, Shield, BookText, Send, Bell, Check, CheckCheck,
+  ChevronDown, ChevronUp
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useNavigate } from "react-router";
@@ -42,6 +45,13 @@ export function ParentDashboard() {
   const [isAddChildOpen, setIsAddChildOpen] = useState(false);
   const [newMember, setNewMember] = useState({ name: "", email: "", password: "" });
 
+  // --- FAMILY MESSAGE & RECEIPT STATES ---
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [isSendingMsg, setIsSendingMsg] = useState(false);
+  const [msgData, setMsgData] = useState({ title: "", text: "", recipient: "all" });
+  const [sentAlerts, setSentAlerts] = useState<any[]>([]);
+  const [expandedMsgId, setExpandedMsgId] = useState<string | null>(null);
+
   const [question, setQuestion] = useState("");
   const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
@@ -55,10 +65,10 @@ export function ParentDashboard() {
   const [milestones, setMilestones] = useState({ midterm: { published: false, score: null as number | null }, final: { published: false, score: null as number | null }, avgWeeklyQuiz: 0 });
 
   useEffect(() => {
-    loadParentData(true); // Pass true for initial load to show spinner
+    loadParentData(true); 
     const channel = supabase.channel('parent-dashboard-realtime')
       .on('postgres_changes', { event: '*', schema: 'public' }, () => { 
-        loadParentData(false); // Silent background refresh
+        loadParentData(false); 
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -87,12 +97,10 @@ export function ParentDashboard() {
       const { data: profile } = await supabase.from('profiles').select('*, departments(name_en)').eq('id', user.id).single();
       setCurrentUser(profile);
 
-      // Fetch Global Events
       const today = new Date().toISOString().split('T')[0];
       const { data: events } = await supabase.from('events').select('*').gte('event_date', today).order('event_date', { ascending: true }).limit(3);
       if (events) setUpcomingEvents(events);
 
-      // Fetch Real Attendance
       const { data: attData } = await supabase.from('attendance').select('present').eq('user_id', user.id);
       if (attData && attData.length > 0) {
         const present = attData.filter(a => a.present).length;
@@ -113,11 +121,13 @@ export function ParentDashboard() {
 
         if (book && list.length > 0) {
           const memberIds = list.map(m => m.id);
-          const [ { data: assignments }, { data: quizzes } ] = await Promise.all([
+          const [ { data: assignments }, { data: quizzes }, { data: alerts } ] = await Promise.all([
             supabase.from('assignments').select('id').eq('book_id', book.id),
-            supabase.from('quizzes').select('id').eq('book_id', book.id)
+            supabase.from('quizzes').select('id').eq('book_id', book.id),
+            supabase.from('notifications').select('id, user_id, title, message, is_read, created_at').eq('type', 'family_alert').in('user_id', memberIds).order('created_at', { ascending: false })
           ]);
           
+          if (alerts) setSentAlerts(alerts);
           const assignmentIds = assignments?.map(a => a.id) || [];
           const quizIds = quizzes?.map(q => q.id) || [];
 
@@ -219,6 +229,65 @@ export function ParentDashboard() {
     } catch (error: any) { toast.error(error.message); } finally { setIsRegistering(false); }
   };
 
+  const handleSendFamilyMessage = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
+    if (!msgData.title.trim() || !msgData.text.trim()) return toast.error("Title and message are required.");
+
+    setIsSendingMsg(true);
+    try {
+      const targets = msgData.recipient === "all" 
+        ? familyMembers.filter(m => m.id !== currentUser.id)
+        : familyMembers.filter(m => m.id === msgData.recipient);
+
+      if (targets.length === 0) throw new Error("No valid family members found to receive this message.");
+
+      // Automatically append the sender's name to the message so receivers know who sent it!
+      const messageBody = `${msgData.text}\n\n— Sent by ${currentUser.name}`;
+
+      const notifications = targets.map(child => ({
+        user_id: child.id,
+        title: msgData.title,
+        message: messageBody,
+        type: "family_alert",
+        link: "/app" 
+      }));
+
+      const { error } = await supabase.from('notifications').insert(notifications);
+      if (error) throw error;
+
+      toast.success("Message sent to family members!");
+      setMsgData({ title: "", text: "", recipient: "all" });
+      setExpandedMsgId(null);
+      loadParentData(false); // Silent refresh to update the Sent History tab
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsSendingMsg(false);
+    }
+  };
+
+  // Group sent alerts by message content & timestamp to consolidate the read receipts
+  const broadcastHistory = Object.values(
+    sentAlerts.reduce((acc: any, alert: any) => {
+      const key = `${alert.title}_${alert.message.substring(0, 30)}`;
+      if (!acc[key]) {
+        acc[key] = {
+          id: alert.id,
+          title: alert.title,
+          message: alert.message,
+          created_at: alert.created_at,
+          recipients: []
+        };
+      }
+      
+      const member = familyMembers.find(m => m.id === alert.user_id);
+      if (member) acc[key].recipients.push({ name: member.name, is_read: alert.is_read });
+      
+      return acc;
+    }, {})
+  ).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+
   if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="animate-spin text-green-600 w-10 h-10" /></div>;
 
   const departmentName = currentUser?.departments?.name_en;
@@ -303,7 +372,7 @@ export function ParentDashboard() {
             <CardTitle className="flex items-center gap-2 text-black font-bold"><MessageSquare className="w-5 h-5 text-green-600" /> Ask a Question</CardTitle>
             <CardDescription className="mt-1">Submit anonymous questions to leadership.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 flex-1 flex flex-col p-6">
+          <CardContent className="p-6 space-y-4 flex-1 flex flex-col">
             <Textarea placeholder="Type your question here..." value={question} onChange={(e) => setQuestion(e.target.value)} className="resize-none border-gray-200 focus-visible:ring-green-600 rounded-2xl flex-1 min-h-[150px] text-black font-medium p-4 shadow-sm" />
             <Button type="button" onClick={handleSubmitQuestion} disabled={!question.trim() || isSubmittingQuestion} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md py-6 transition-all">
               {isSubmittingQuestion ? "Sending..." : "Submit Question"}
@@ -328,9 +397,9 @@ export function ParentDashboard() {
                   )}
                   <div className="p-4 flex flex-col flex-1 min-w-0">
                     <h4 className="font-bold text-black text-sm sm:text-base mb-1.5 truncate">{event.title}</h4>
-                    {event.description && <p className="text-xs text-gray-500 mb-3 line-clamp-2">{event.description}</p>}
+                    {event.description && <p className="text-xs text-gray-500 mb-4 line-clamp-2">{event.description}</p>}
                     <div className="mt-auto pt-2 border-t border-gray-50">
-                      {event.location && <a href={event.location.startsWith('http') ? event.location : `https://maps.google.com/?q=${event.location}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700 text-xs font-bold py-2.5 rounded-xl transition-all border border-green-200"><MapPin className="w-4 h-4" /> Open in Maps</a>}
+                      {event.location && <a href={event.location.startsWith('http') ? event.location : `https://maps.google.com/?q=${event.location}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700 text-xs font-bold py-2.5 rounded-xl transition-all border border-gray-100"><MapPin className="w-4 h-4" /> Open in Maps</a>}
                     </div>
                   </div>
                 </div>
@@ -343,18 +412,140 @@ export function ParentDashboard() {
       <div className="space-y-4 pt-8 border-t border-gray-200">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
           <h2 className="text-2xl font-black text-black flex items-center gap-2"><Users className="w-6 h-6 text-green-600" /> Household Overview</h2>
-          <Dialog open={isAddChildOpen} onOpenChange={setIsAddChildOpen}>
-            <DialogTrigger asChild><Button type="button" className="bg-black hover:bg-gray-800 text-white font-bold w-full sm:w-auto shadow-md rounded-xl h-11 transition-all"><UserPlus className="w-4 h-4 mr-2" /> Add Child to Family</Button></DialogTrigger>
-            <DialogContent className="bg-white border border-green-100 rounded-3xl p-6 sm:p-8">
-              <DialogHeader><DialogTitle className="text-black font-black text-xl mb-2">Add Child to Family</DialogTitle></DialogHeader>
-              <div className="space-y-4 py-4">
-                <Input placeholder="Child's Full Name" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
-                <Input placeholder="Email (e.g. child@family.com)" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
-                <Input placeholder="Password" type="password" value={newMember.password} onChange={e => setNewMember({...newMember, password: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
-              </div>
-              <DialogFooter><Button type="button" onClick={handleRegisterMember} disabled={isRegistering} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md font-bold rounded-xl h-12 transition-all">{isRegistering ? "Processing..." : "Create Account"}</Button></DialogFooter>
-            </DialogContent>
-          </Dialog>
+          
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            
+            {/* --- UPGRADED: DUAL TAB MESSAGE FAMILY MODAL WITH ACCORDIONS --- */}
+            <Dialog open={isMessageModalOpen} onOpenChange={setIsMessageModalOpen}>
+              <DialogTrigger asChild>
+                <Button type="button" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50 font-bold flex-1 sm:flex-none rounded-xl h-11 transition-all">
+                  <Bell className="w-4 h-4 mr-2" /> Message Family
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-white border border-green-100 rounded-3xl p-6 sm:p-8 max-w-xl">
+                <DialogHeader>
+                  <DialogTitle className="text-black font-black text-xl">Family Announcements</DialogTitle>
+                </DialogHeader>
+                
+                <Tabs defaultValue="new" className="w-full mt-4">
+                  <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1.5 rounded-xl mb-4 border border-gray-200 shadow-inner">
+                    <TabsTrigger value="new" className="rounded-lg font-bold text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">New Message</TabsTrigger>
+                    <TabsTrigger value="history" className="rounded-lg font-bold text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">Sent History & Receipts</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* NEW MESSAGE TAB */}
+                  <TabsContent value="new" className="space-y-4 py-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-gray-500 uppercase">Alert Title</Label>
+                      <Input placeholder="e.g. Saturday Service Reminder" value={msgData.title} onChange={e => setMsgData({...msgData, title: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-gray-500 uppercase">Message</Label>
+                      <Textarea placeholder="Type your message here..." value={msgData.text} onChange={e => setMsgData({...msgData, text: e.target.value})} className="resize-none h-24 border-gray-200 text-black font-medium rounded-xl focus-visible:ring-green-500" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-gray-500 uppercase">Send To</Label>
+                      <Select value={msgData.recipient} onValueChange={(val) => setMsgData({...msgData, recipient: val})}>
+                        <SelectTrigger className="h-11 rounded-xl border-gray-200"><SelectValue placeholder="Select Recipient" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Everyone in Family</SelectItem>
+                          {familyMembers.filter(m => m.id !== currentUser?.id).map(m => (
+                            <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="button" onClick={handleSendFamilyMessage} disabled={isSendingMsg} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md font-bold rounded-xl h-12 mt-4 transition-all">
+                      {isSendingMsg ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />} 
+                      {isSendingMsg ? "Sending..." : "Send Announcement"}
+                    </Button>
+                  </TabsContent>
+
+                  {/* SENT HISTORY & READ RECEIPTS TAB (Accordion Style) */}
+                  <TabsContent value="history" className="max-h-[350px] overflow-y-auto custom-scrollbar pr-2 space-y-3">
+                    {broadcastHistory.length === 0 ? (
+                      <div className="text-center py-10 text-gray-400">
+                        <MessageSquare className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                        <p className="text-sm font-medium">No family announcements sent yet.</p>
+                      </div>
+                    ) : (
+                      broadcastHistory.map((broadcast: any) => {
+                        const isExpanded = expandedMsgId === broadcast.id;
+                        const totalRecipients = broadcast.recipients.length;
+                        const seenCount = broadcast.recipients.filter((r: any) => r.is_read).length;
+
+                        return (
+                          <div key={broadcast.id} className="p-0 rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden transition-all">
+                            <button 
+                              type="button" 
+                              onClick={() => setExpandedMsgId(isExpanded ? null : broadcast.id)}
+                              className="w-full text-left p-4 hover:bg-gray-50 flex items-center justify-between"
+                            >
+                              <div className="flex-1 min-w-0 pr-4">
+                                <h4 className="font-bold text-black text-sm truncate">{broadcast.title}</h4>
+                                <div className="flex items-center gap-3 mt-1.5">
+                                  <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${seenCount === totalRecipients ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-600 border-gray-200"}`}>
+                                    {seenCount} / {totalRecipients} Seen
+                                  </Badge>
+                                  <p className="text-[10px] text-gray-400 font-medium">
+                                    {new Date(broadcast.created_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
+                            </button>
+
+                            {isExpanded && (
+                              <div className="px-4 pb-4 bg-gray-50 border-t border-gray-100">
+                                <p className="text-xs text-gray-700 whitespace-pre-wrap py-3 leading-relaxed border-b border-gray-200 mb-3">
+                                  {broadcast.message}
+                                </p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Read Receipts</p>
+                                <div className="space-y-1.5">
+                                  {broadcast.recipients.map((rec: any, idx: number) => (
+                                    <div key={idx} className="flex items-center justify-between text-xs">
+                                      <span className="font-medium text-gray-700">{rec.name}</span>
+                                      {rec.is_read ? (
+                                        <span className="flex items-center text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded-full"><CheckCheck className="w-3.5 h-3.5 mr-1" /> Seen</span>
+                                      ) : (
+                                        <span className="flex items-center text-gray-500 font-medium bg-gray-200 px-2 py-0.5 rounded-full"><Check className="w-3 h-3 mr-1" /> Delivered</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
+
+            {/* Existing Add Child Button */}
+            <Dialog open={isAddChildOpen} onOpenChange={setIsAddChildOpen}>
+              <DialogTrigger asChild>
+                <Button type="button" className="bg-black hover:bg-gray-800 text-white font-bold flex-1 sm:flex-none shadow-md rounded-xl h-11 transition-all">
+                  <UserPlus className="w-4 h-4 mr-2" /> Add Child
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-white border border-green-100 rounded-3xl p-6 sm:p-8">
+                <DialogHeader><DialogTitle className="text-black font-black text-xl mb-2">Add Child to Family</DialogTitle></DialogHeader>
+                <div className="space-y-4 py-4">
+                  <Input placeholder="Child's Full Name" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
+                  <Input placeholder="Email (e.g. child@family.com)" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
+                  <Input placeholder="Password" type="password" value={newMember.password} onChange={e => setNewMember({...newMember, password: e.target.value})} className="border-gray-200 text-black font-medium h-11 rounded-xl focus-visible:ring-green-500" />
+                </div>
+                <div className="flex pt-2">
+                  <Button type="button" onClick={handleRegisterMember} disabled={isRegistering} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md font-bold rounded-xl h-12 transition-all">
+                    {isRegistering ? "Processing..." : "Create Account"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <Card className="border-green-200 shadow-sm bg-white rounded-3xl overflow-hidden">
