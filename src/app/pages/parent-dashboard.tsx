@@ -637,24 +637,34 @@ export function ParentDashboard() {
       {/* SEPARATED WELCOME BANNER & DAILY VERSE CARDS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* LEFT: Profile & Welcome Card */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-green-200 shadow-sm flex flex-col sm:flex-row items-center sm:items-start lg:items-center gap-5 w-full">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-50 border-2 border-green-100 flex items-center justify-center shrink-0">
-            <span className="text-2xl sm:text-3xl font-bold text-green-700">{currentUser?.name?.charAt(0).toUpperCase()}</span>
+        {/* LEFT: Profile & Welcome Card - UPDATED FOR MOBILE SIDE-BY-SIDE */}
+        <div className="lg:col-span-2 bg-white rounded-3xl p-5 sm:p-8 border border-green-200 shadow-sm flex flex-row items-center gap-4 sm:gap-5 w-full">
+          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-green-50 border-2 border-green-100 flex items-center justify-center shrink-0">
+            <span className="text-xl sm:text-3xl font-bold text-green-700">{currentUser?.name?.charAt(0).toUpperCase()}</span>
           </div>
-          <div className="w-full min-w-0 text-center sm:text-left">
-            <h2 className="text-xl sm:text-2xl font-bold text-black truncate">Welcome Back, {currentUser?.name?.split(' ')[0] || "Parent"}!</h2>
-            <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2 sm:mt-3">
-              <Badge className="bg-black text-white border-none px-2.5 py-1 font-medium shadow-none rounded-lg text-xs"><Shield className="w-3.5 h-3.5 mr-1 text-green-400" /> Parent</Badge>
-              {departmentName && <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200 font-medium rounded-lg text-xs px-2.5 py-1 truncate">{departmentName} Dept</Badge>}
-              {isDeptHead && <Badge className="bg-green-600 text-white border-none capitalize font-medium rounded-lg text-xs px-2.5 py-1">{currentUser?.department_role?.replace('_', ' ')}</Badge>}
+          <div className="flex-1 min-w-0 text-left">
+            <h2 className="text-lg sm:text-2xl font-bold text-black truncate">Welcome Back, {currentUser?.name?.split(' ')[0] || "Parent"}!</h2>
+            <div className="flex flex-wrap justify-start gap-1.5 sm:gap-2 mt-1.5 sm:mt-3">
+              <Badge className="bg-black text-white border-none px-2 py-0.5 sm:px-2.5 sm:py-1 font-medium shadow-none rounded-lg text-[10px] sm:text-xs">
+                <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 text-green-400" /> Parent
+              </Badge>
+              {departmentName && (
+                <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200 font-medium rounded-lg text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 truncate">
+                  {departmentName} Dept
+                </Badge>
+              )}
+              {isDeptHead && (
+                <Badge className="bg-green-600 text-white border-none capitalize font-medium rounded-lg text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1">
+                  {currentUser?.department_role?.replace('_', ' ')}
+                </Badge>
+              )}
               {familyName && (
-                <Badge variant="outline" className="border-gray-200 text-gray-700 bg-gray-50 font-medium rounded-lg text-xs px-2.5 py-1 shadow-sm truncate">
-                  <Users className="w-3.5 h-3.5 mr-1.5 text-green-600 shrink-0" /> {familyName} Family
+                <Badge variant="outline" className="border-gray-200 text-gray-700 bg-gray-50 font-medium rounded-lg text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 shadow-sm truncate">
+                  <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-green-600 shrink-0" /> {familyName} Family
                 </Badge>
               )}
             </div>
-            <p className="text-gray-600 font-medium text-sm sm:text-base mt-3">Lead your household's spiritual journey today.</p>
+            <p className="hidden sm:block text-gray-600 font-medium text-sm sm:text-base mt-3">Lead your household's spiritual journey today.</p>
           </div>
         </div>
 
